@@ -1,4 +1,4 @@
-console.log('Hello world 2', Box2D);
+import circle from './circle.js'
 
 function init() {
   var   b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -30,15 +30,15 @@ function init() {
   //create ground
   bodyDef.type = b2Body.b2_staticBody;
   fixDef.shape = new b2PolygonShape;
-  fixDef.shape.SetAsBox(20, 2);
-  bodyDef.position.Set(10, 400 / 30 + 1.8);
+  fixDef.shape.SetAsBox(40, 2);
+  bodyDef.position.Set(10, 720 / 30 + 1.8);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   bodyDef.position.Set(10, -1.8);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   fixDef.shape.SetAsBox(2, 14);
   bodyDef.position.Set(-1.8, 13);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
-  bodyDef.position.Set(21.8, 13);
+  bodyDef.position.Set(1280 / 30 + 1.8, 13);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   
   
@@ -63,7 +63,8 @@ function init() {
   
   
   //create some objects
-  
+  circle.default.createCircle(world)
+
   //setup debug draw
   var debugDraw = new b2DebugDraw();
      debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
