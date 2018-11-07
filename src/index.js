@@ -1,4 +1,6 @@
-import circle from './circle.js'
+import car from './car.js'
+import goal from './goal.js'
+import contactListener from './contactListener.js'
 
 function init() {
   var   b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -63,7 +65,12 @@ function init() {
   
   
   //create some objects
-  circle.default.createCircle(world)
+  car.default.createCar(world, 20, 10)
+  car.default.getBody().SetLinearDamping(0.1)
+  car.default.createCar(world, 10, 11)
+  goal.default.createGoal(world)
+
+  world.SetContactListener(contactListener.default)
 
   //setup debug draw
   var debugDraw = new b2DebugDraw();
@@ -76,131 +83,25 @@ function init() {
   
   window.setInterval(update, 1000 / 60);
   
-  //mouse
-  
-  var mouseX, mouseY, mousePVec, isMouseDown, selectedBody, mouseJoint;
-  var canvasPosition = getElementPosition(document.getElementById("canvas"));
-  
-  function handleMouseDown(e) {
-     isMouseDown = true;
-     handleMouseMove(e);
-     document.addEventListener("mousemove", handleMouseMove, true);
-     document.addEventListener("touchmove", handleMouseMove, true);
-  }
-  
-  document.addEventListener("mousedown", handleMouseDown, true);
-  document.addEventListener("touchstart", handleMouseDown, true);
-  
-  function handleMouseUp() {
-     document.removeEventListener("mousemove", handleMouseMove, true);
-     document.removeEventListener("touchmove", handleMouseMove, true);
-     isMouseDown = false;
-     mouseX = undefined;
-     mouseY = undefined;
-  }
-  
-  document.addEventListener("mouseup", handleMouseUp, true);
-  document.addEventListener("touchend", handleMouseUp, true);
-  
-  function handleMouseMove(e) {
-     var clientX, clientY;
-     if(e.clientX)
-     {
-        clientX = e.clientX;
-        clientY = e.clientY;
-     }
-     else if(e.changedTouches && e.changedTouches.length > 0)
-     {
-        var touch = e.changedTouches[e.changedTouches.length - 1];
-        clientX = touch.clientX;
-        clientY = touch.clientY;
-     }
-     else
-     {
-        return;
-     }
-     mouseX = (clientX - canvasPosition.x) / 30;
-     mouseY = (clientY - canvasPosition.y) / 30;
-     e.preventDefault();
-  };
-  
-  function getBodyAtMouse() {
-     mousePVec = new b2Vec2(mouseX, mouseY);
-     var aabb = new b2AABB();
-     aabb.lowerBound.Set(mouseX - 0.001, mouseY - 0.001);
-     aabb.upperBound.Set(mouseX + 0.001, mouseY + 0.001);
-     
-     // Query the world for overlapping shapes.
-
-     selectedBody = null;
-     world.QueryAABB(getBodyCB, aabb);
-     return selectedBody;
-  }
-
-  function getBodyCB(fixture) {
-     if(fixture.GetBody().GetType() != b2Body.b2_staticBody) {
-        if(fixture.GetShape().TestPoint(fixture.GetBody().GetTransform(), mousePVec)) {
-           selectedBody = fixture.GetBody();
-           return false;
-        }
-     }
-     return true;
-  }
-  
   //update
   
   function update() {
   
-     if(isMouseDown && (!mouseJoint)) {
-        var body = getBodyAtMouse();
-        if(body) {
-           var md = new b2MouseJointDef();
-           md.bodyA = world.GetGroundBody();
-           md.bodyB = body;
-           md.target.Set(mouseX, mouseY);
-           md.collideConnected = true;
-           md.maxForce = 300.0 * body.GetMass();
-           mouseJoint = world.CreateJoint(md);
-           body.SetAwake(true);
-        }
-     }
-     
-     if(mouseJoint) {
-        if(isMouseDown) {
-           mouseJoint.SetTarget(new b2Vec2(mouseX, mouseY));
-        } else {
-           world.DestroyJoint(mouseJoint);
-           mouseJoint = null;
-        }
-     }
+    car.default.getBody().SetLinearVelocity(new b2Vec2(5.0, 0))
+    car.default.getBody().SetLinearDamping(1)
+
+    let contact = contactListener.default.getBeginContact()
+
+    if (contact) {
+        let fixA = contact.GetFixtureA()
+        // console.log('contact', contact)
+    }
+    // circle.default.getBody().SetAwake(true);
   
      world.Step(1 / 60, 10, 10);
      world.DrawDebugData();
      world.ClearForces();
   };
-  
-  //helpers
-  
-  //http://js-tut.aardon.de/js-tut/tutorial/position.html
-  function getElementPosition(element) {
-     var elem=element, tagname="", x=0, y=0;
-    
-     while((typeof(elem) == "object") && (typeof(elem.tagName) != "undefined")) {
-        y += elem.offsetTop;
-        x += elem.offsetLeft;
-        tagname = elem.tagName.toUpperCase();
-
-        if(tagname == "BODY")
-           elem=0;
-
-        if(typeof(elem) == "object") {
-           if(typeof(elem.offsetParent) == "object")
-              elem = elem.offsetParent;
-        }
-     }
-
-     return {x: x, y: y};
-  }
 
 
 };
