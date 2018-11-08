@@ -1,5 +1,5 @@
-import car from './car.js'
-import goal from './goal.js'
+import {Car} from './car.js'
+import { Goal } from './goal.js'
 import contactListener from './contactListener.js'
 import draw from './draw.js'
 
@@ -70,7 +70,7 @@ function init() {
   
   //create some objects
 
-  world.SetContactListener(contactListener.default)
+    world.SetContactListener(contactListener.default)
 
   //setup debug draw
     var debugDraw = new b2DebugDraw();
@@ -84,37 +84,33 @@ function init() {
     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
     world.SetDebugDraw(debugDraw);
 
-    
-    goal.default.createGoal(world)
+    let goal = new Goal(world)
     draw.default.createDraw(ctx, worldDrawScale)
-    car.default.createCar(world, 20, 10, 2, draw)
+
+    let car = new Car(world, 20, 10, 2, draw)
+    // car.default.createCar(world, 20, 10, 2, draw)
 
     document.addEventListener('keydown', (event) => {
         let code = event.key;
-        car.default.control(code, true)
+        car.control(code, true)
     });
     document.addEventListener('keyup', (event) => {
         let code = event.key;
-        car.default.control(code, false)
+        car.control(code, false)
     });
   
   window.setInterval(update, 1000 / 60);
   
-  //update
-
-  function rayCallback(fixture, point, normalVector, fraction) {
-      console.log('rayCallback', fixture, point, normalVector, fraction)
-  }
-  
+  //update  
   function update() {
 
-    car.default.update()
+    car.update()
 
-     world.Step(1 / 60, 10, 10);
-     world.DrawDebugData();
-     world.ClearForces();
+    world.Step(1 / 60, 10, 10);
+    world.DrawDebugData();
+    world.ClearForces();
 
-     car.default.draw()
+    car.draw()
   };
 
 
