@@ -66,29 +66,33 @@ function init() {
   
   //create some objects
   car.default.createCar(world, 20, 10)
-  car.default.getBody().SetLinearDamping(0.1)
-  car.default.createCar(world, 10, 11)
   goal.default.createGoal(world)
 
   world.SetContactListener(contactListener.default)
 
   //setup debug draw
-  var debugDraw = new b2DebugDraw();
-     debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
-     debugDraw.SetDrawScale(30.0);
-     debugDraw.SetFillAlpha(0.5);
-     debugDraw.SetLineThickness(1.0);
-     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
-     world.SetDebugDraw(debugDraw);
+    var debugDraw = new b2DebugDraw();
+    debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
+    debugDraw.SetDrawScale(30.0);
+    debugDraw.SetFillAlpha(0.5);
+    debugDraw.SetLineThickness(1.0);
+    debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
+    world.SetDebugDraw(debugDraw);
+
+    document.addEventListener('keydown', (event) => {
+        let code = event.key;
+        car.default.control(code, true)
+    });
+    document.addEventListener('keyup', (event) => {
+        let code = event.key;
+        car.default.control(code, false)
+    });
   
   window.setInterval(update, 1000 / 60);
   
   //update
   
   function update() {
-  
-    car.default.getBody().SetLinearVelocity(new b2Vec2(5.0, 0))
-    car.default.getBody().SetLinearDamping(1)
 
     let contact = contactListener.default.getBeginContact()
 
@@ -97,6 +101,8 @@ function init() {
         // console.log('contact', contact)
     }
     // circle.default.getBody().SetAwake(true);
+    
+    car.default.update()
   
      world.Step(1 / 60, 10, 10);
      world.DrawDebugData();
