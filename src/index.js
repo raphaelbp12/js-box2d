@@ -65,7 +65,7 @@ function init() {
   
   
   //create some objects
-  car.default.createCar(world, 20, 10)
+  car.default.createCar(world, 20, 10, 2)
   goal.default.createGoal(world)
 
   world.SetContactListener(contactListener.default)
@@ -101,7 +101,7 @@ function init() {
         // console.log('contact', contact)
     }
     // circle.default.getBody().SetAwake(true);
-    
+
     car.default.update()
   
      world.Step(1 / 60, 10, 10);

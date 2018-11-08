@@ -26,7 +26,7 @@ const car = {
     p1l: new Box2D.Common.Math.b2Vec2,
     p2l: new Box2D.Common.Math.b2Vec2,
     p3l: new Box2D.Common.Math.b2Vec2,
-    createCar: function(world, x, y) {
+    createCar: function(world, x, y, scale) {
         this.bodyDef = new Box2D.Dynamics.b2BodyDef;
         this.bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
         this.bodyDef.position.x = x;
@@ -34,10 +34,10 @@ const car = {
 
         this.fixDef = new Box2D.Dynamics.b2FixtureDef;
         this.fixDef.density = 30.0;
-        this.fixDef.friction = 0.8;
+        this.fixDef.friction = 4.0/scale;
         this.fixDef.restitution = 0.1;
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
-        this.fixDef.shape.SetAsBox(.5,1.5);
+        this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
         
         this.car = world.CreateBody(this.bodyDef)
         this.car.CreateFixture(this.fixDef);
@@ -45,44 +45,44 @@ const car = {
         this.xx = this.car.GetWorldCenter().x;
         this.yy = this.car.GetWorldCenter().y;
 
-        this.frontRightWheel = this.createWheel(world, this.xx+0.5, this.yy-1)
-        this.frontLeftWheel = this.createWheel(world, this.xx-0.5, this.yy-1)
-        this.rearRightWheel = this.createWheel(world, this.xx+0.5, this.yy+1)
-        this.rearLeftWheel = this.createWheel(world, this.xx-0.5, this.yy+1)
+        this.frontRightWheel = this.createWheel(world, this.xx+(0.1*scale), this.yy-(0.2*scale), scale)
+        this.frontLeftWheel = this.createWheel(world, this.xx-(0.1*scale), this.yy-(0.2*scale), scale)
+        this.rearRightWheel = this.createWheel(world, this.xx+(0.1*scale), this.yy+(0.2*scale), scale)
+        this.rearLeftWheel = this.createWheel(world, this.xx-(0.1*scale), this.yy+(0.2*scale), scale)
 
-        this.jointFrontRight = this.createRevJoint(world, this.car, this.frontRightWheel)
-        this.jointFrontLeft = this.createRevJoint(world, this.car, this.frontLeftWheel)
-        this.jointRearRight = this.createRevJoint(world, this.car, this.rearRightWheel)
-        this.jointRearLeft = this.createRevJoint(world, this.car, this.rearLeftWheel)
+        this.jointFrontRight = this.createRevJoint(world, this.car, this.frontRightWheel, scale)
+        this.jointFrontLeft = this.createRevJoint(world, this.car, this.frontLeftWheel, scale)
+        this.jointRearRight = this.createRevJoint(world, this.car, this.rearRightWheel, scale)
+        this.jointRearLeft = this.createRevJoint(world, this.car, this.rearLeftWheel, scale)
 
         this.maxSteeringAngle = 1
         this.steeringAngle = 0
-        this.STEER_SPEED = 3;
+        this.STEER_SPEED = 1.0*scale;
         this.sf = false;
         this.sb = false;
-        this.ENGINE_SPEED = 300;
+        this.ENGINE_SPEED = 10*scale*scale;
     },
-    createWheel: function(world, x, y) {
+    createWheel: function(world, x, y, scale) {
         let bodyDef = new Box2D.Dynamics.b2BodyDef;
         bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
         bodyDef.position.x = x
         bodyDef.position.y = y
         let fixDef = new Box2D.Dynamics.b2FixtureDef;
         fixDef.density = 30;
-        fixDef.friction = 10;
+        fixDef.friction = 40/scale;
         fixDef.restitution = 0.1;
         fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
-        fixDef.shape.SetAsBox(.2,.4);
+        fixDef.shape.SetAsBox(.04*scale,.08*scale);
         fixDef.isSensor = true;
         let wheel = world.CreateBody(bodyDef);
         wheel.CreateFixture(fixDef);
         return wheel;
     },
-    createRevJoint: function(world, body1, wheel) {
+    createRevJoint: function(world, body1, wheel, scale) {
         let revoluteJointDef = new Box2D.Dynamics.Joints.b2RevoluteJointDef;
         revoluteJointDef.Initialize(body1, wheel, wheel.GetWorldCenter());
         revoluteJointDef.motorSpeed = 0;
-        revoluteJointDef.maxMotorTorque = 1000;
+        revoluteJointDef.maxMotorTorque = 200*scale;
         revoluteJointDef.enableMotor = true;
         let revoluteJoint = world.CreateJoint(revoluteJointDef);
         return revoluteJoint;
@@ -105,6 +105,7 @@ const car = {
         this.jointFrontLeft.SetMotorSpeed(this.mspeed * this.STEER_SPEED);
         this.mspeed = this.steeringAngle - this.jointFrontRight.GetJointAngle();
         this.jointFrontRight.SetMotorSpeed(this.mspeed * this.STEER_SPEED);
+        console.log('move', 'mspeed', this.mspeed)
     },
     steerForward: function() {
         this.frontRightWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3r.x,this.p3r.y),this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
