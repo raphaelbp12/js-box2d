@@ -47,6 +47,7 @@ function init() {
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   
   
+  
   //create some objects
 //   bodyDef.type = b2Body.b2_kinematicBody;
 //   for(var i = 0; i < 10; ++i) {
@@ -107,17 +108,8 @@ function init() {
   
   function update() {
 
-    let contact = contactListener.default.getBeginContact()
-
-    if (contact) {
-        let fixA = contact.GetFixtureA()
-        // console.log('contact', contact)
-    }
-    // circle.default.getBody().SetAwake(true);
-
     car.default.update()
-  
-    world.RayCast(rayCallback, new b2Vec2(0, 0), new b2Vec2(20, 20))
+
      world.Step(1 / 60, 10, 10);
      world.DrawDebugData();
      world.ClearForces();

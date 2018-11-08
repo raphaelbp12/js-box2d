@@ -6123,7 +6123,7 @@ Box2D.postDefs = [];
       aabb.upperBound.Set(p.x + b2Settings.b2_linearSlop, p.y + b2Settings.b2_linearSlop);
       broadPhase.Query(WorldQueryWrapper, aabb);
    }
-   b2World.prototype.RayCast = function (callback, point1, point2) {
+   b2World.prototype.RayCast = function (callback, point1, point2, that) {
       var __this = this;
       var broadPhase = __this.m_contactManager.m_broadPhase;
       var output = new b2RayCastOutput;
@@ -6135,7 +6135,7 @@ Box2D.postDefs = [];
          if (hit) {
             var fraction = output.fraction;
             var point = new b2Vec2((1.0 - fraction) * point1.x + fraction * point2.x, (1.0 - fraction) * point1.y + fraction * point2.y);
-            return callback(fixture, point, output.normal, fraction);
+            return callback(fixture, point, output.normal, fraction, that);
          }
          return input.maxFraction;
       };

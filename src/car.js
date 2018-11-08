@@ -1,5 +1,8 @@
+import sensors from './sensors.js'
+
 const car = {
     drawDebugger: null,
+    sensors: null,
     fixDef: null,
     bodyDef: null,
     fixture: null,
@@ -28,6 +31,8 @@ const car = {
     p2l: new Box2D.Common.Math.b2Vec2,
     p3l: new Box2D.Common.Math.b2Vec2,
     createCar: function(world, x, y, scale, draw) {
+        sensors.default.createSensors(world, scale, draw)
+
         this.drawDebugger = draw
         this.bodyDef = new Box2D.Dynamics.b2BodyDef;
         this.bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -74,6 +79,7 @@ const car = {
         fixDef.density = 30;
         fixDef.friction = 40/scale;
         fixDef.restitution = 0.1;
+        fixDef.userData = "wheel";
         fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         fixDef.shape.SetAsBox(.04*scale,.08*scale);
         fixDef.isSensor = true;
@@ -152,10 +158,10 @@ const car = {
         if(this.sf)  this.steerForward();
         if(this.sb)  this.steerBackward();
 
+        sensors.default.update(this.car.GetWorldCenter(), this.car.GetAngle())
     },
     draw: function() {
-        this.drawDebugger.default.line(this.car.GetWorldCenter().x, this.car.GetWorldCenter().y, 20, 20)
-        this.drawDebugger.default.circle(20,20,1)
+        sensors.default.drawLasers()
     },
     getBody: function() {
         // console.log('circle getBody', this.bodyDef)
