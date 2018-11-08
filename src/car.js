@@ -1,4 +1,5 @@
 const car = {
+    drawDebugger: null,
     fixDef: null,
     bodyDef: null,
     fixture: null,
@@ -26,7 +27,8 @@ const car = {
     p1l: new Box2D.Common.Math.b2Vec2,
     p2l: new Box2D.Common.Math.b2Vec2,
     p3l: new Box2D.Common.Math.b2Vec2,
-    createCar: function(world, x, y, scale) {
+    createCar: function(world, x, y, scale, draw) {
+        this.drawDebugger = draw
         this.bodyDef = new Box2D.Dynamics.b2BodyDef;
         this.bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
         this.bodyDef.position.x = x;
@@ -36,6 +38,7 @@ const car = {
         this.fixDef.density = 30.0;
         this.fixDef.friction = 4.0/scale;
         this.fixDef.restitution = 0.1;
+        this.fixDef.userData = "car";
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
         
@@ -89,7 +92,7 @@ const car = {
 
     },
     control: function(code, isDown) {
-        console.log('car move', code);
+        // console.log('car move', code);
 
         if(code == 'a' || code == 'ArrowLeft' ) //LEFT
             this.steeringAngle = isDown ? -this.maxSteeringAngle : 0;
@@ -105,7 +108,7 @@ const car = {
         this.jointFrontLeft.SetMotorSpeed(this.mspeed * this.STEER_SPEED);
         this.mspeed = this.steeringAngle - this.jointFrontRight.GetJointAngle();
         this.jointFrontRight.SetMotorSpeed(this.mspeed * this.STEER_SPEED);
-        console.log('move', 'mspeed', this.mspeed)
+        // console.log('move', 'mspeed', this.mspeed)
     },
     steerForward: function() {
         this.frontRightWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3r.x,this.p3r.y),this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
@@ -148,6 +151,11 @@ const car = {
                     
         if(this.sf)  this.steerForward();
         if(this.sb)  this.steerBackward();
+
+    },
+    draw: function() {
+        this.drawDebugger.default.line(this.car.GetWorldCenter().x, this.car.GetWorldCenter().y, 20, 20)
+        this.drawDebugger.default.circle(20,20,1)
     },
     getBody: function() {
         // console.log('circle getBody', this.bodyDef)

@@ -1,6 +1,7 @@
 import car from './car.js'
 import goal from './goal.js'
 import contactListener from './contactListener.js'
+import draw from './draw.js'
 
 function init() {
   var   b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -21,6 +22,8 @@ function init() {
         new b2Vec2(0, 0)    //gravity
      ,  true                 //allow sleep
   );
+
+  var worldDrawScale = 30.0
   
   var fixDef = new b2FixtureDef;
   fixDef.density = 1.0;
@@ -33,51 +36,57 @@ function init() {
   bodyDef.type = b2Body.b2_staticBody;
   fixDef.shape = new b2PolygonShape;
   fixDef.shape.SetAsBox(40, 2);
-  bodyDef.position.Set(10, 720 / 30 + 1.8);
+  bodyDef.position.Set(10, 720 / worldDrawScale + 1.8);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   bodyDef.position.Set(10, -1.8);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   fixDef.shape.SetAsBox(2, 14);
   bodyDef.position.Set(-1.8, 13);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
-  bodyDef.position.Set(1280 / 30 + 1.8, 13);
+  bodyDef.position.Set(1280 / worldDrawScale + 1.8, 13);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
   
   
   //create some objects
-  bodyDef.type = b2Body.b2_kinematicBody;
-  for(var i = 0; i < 10; ++i) {
-     if(Math.random() > 0.5) {
-        fixDef.shape = new b2PolygonShape;
-        fixDef.shape.SetAsBox(
-              Math.random() + 0.1 //half width
-           ,  Math.random() + 0.1 //half height
-        );
-     } else {
-        fixDef.shape = new b2CircleShape(
-           Math.random() + 0.1 //radius
-        );
-     }
-     bodyDef.position.x = Math.random() * 10;
-     bodyDef.position.y = Math.random() * 10;
-     world.CreateBody(bodyDef).CreateFixture(fixDef);
-  }
+//   bodyDef.type = b2Body.b2_kinematicBody;
+//   for(var i = 0; i < 10; ++i) {
+//      if(Math.random() > 0.5) {
+//         fixDef.shape = new b2PolygonShape;
+//         fixDef.shape.SetAsBox(
+//               Math.random() + 0.1 //half width
+//            ,  Math.random() + 0.1 //half height
+//         );
+//      } else {
+//         fixDef.shape = new b2CircleShape(
+//            Math.random() + 0.1 //radius
+//         );
+//      }
+//      bodyDef.position.x = Math.random() * 10;
+//      bodyDef.position.y = Math.random() * 10;
+//      world.CreateBody(bodyDef).CreateFixture(fixDef);
+//   }
   
   
   //create some objects
-  car.default.createCar(world, 20, 10, 2)
-  goal.default.createGoal(world)
 
   world.SetContactListener(contactListener.default)
 
   //setup debug draw
     var debugDraw = new b2DebugDraw();
-    debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
-    debugDraw.SetDrawScale(30.0);
+
+    var canvas = document.getElementById("canvas")
+    var ctx = canvas.getContext("2d")
+    debugDraw.SetSprite(ctx);
+    debugDraw.SetDrawScale(worldDrawScale);
     debugDraw.SetFillAlpha(0.5);
     debugDraw.SetLineThickness(1.0);
     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
     world.SetDebugDraw(debugDraw);
+
+    
+    goal.default.createGoal(world)
+    draw.default.createDraw(ctx, worldDrawScale)
+    car.default.createCar(world, 20, 10, 2, draw)
 
     document.addEventListener('keydown', (event) => {
         let code = event.key;
@@ -91,6 +100,10 @@ function init() {
   window.setInterval(update, 1000 / 60);
   
   //update
+
+  function rayCallback(fixture, point, normalVector, fraction) {
+      console.log('rayCallback', fixture, point, normalVector, fraction)
+  }
   
   function update() {
 
@@ -104,9 +117,12 @@ function init() {
 
     car.default.update()
   
+    world.RayCast(rayCallback, new b2Vec2(0, 0), new b2Vec2(20, 20))
      world.Step(1 / 60, 10, 10);
      world.DrawDebugData();
      world.ClearForces();
+
+     car.default.draw()
   };
 
 
