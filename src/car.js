@@ -6,6 +6,9 @@ export class Car {
 
         this.goals = []
         this.goalPoints = []
+        this.path = []
+
+        this.scale = null
 
         this.drawDebugger = draw
         this.bodyDef = new Box2D.Dynamics.b2BodyDef;
@@ -44,6 +47,7 @@ export class Car {
         this.p3l= new Box2D.Common.Math.b2Vec2;
     
         this.createWheel = (world, x, y, scale) => {
+            this.scale = scale
             let bodyDef = new Box2D.Dynamics.b2BodyDef;
             bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
             bodyDef.position.x = x
@@ -74,15 +78,20 @@ export class Car {
 
         this.control = (code, isDown) => {
             // console.log('car move', code);
-    
             if(code == 'a' || code == 'ArrowLeft' ) //LEFT
-                this.steeringAngle = isDown ? -this.maxSteeringAngle : 0;
+                isDown ? this.setVelocitiesAndDirection(0, -1) : this.setVelocitiesAndDirection(0, 0)
             if(code == 'd' || code == 'ArrowRight') //RIGHT
-                this.steeringAngle = isDown ? this.maxSteeringAngle : 0;
+                isDown ? this.setVelocitiesAndDirection(0, 1) : this.setVelocitiesAndDirection(0, 0)
             if(code == 'w' || code == 'ArrowUp') //FORWARD
-                this.sf = isDown;
+                isDown ? this.setVelocitiesAndDirection(1, 0) : this.setVelocitiesAndDirection(0, 0)
             if(code == 's' || code == 'ArrowDown') //BACKWARD
-                this.sb = isDown;
+                isDown ? this.setVelocitiesAndDirection(-1, 0) : this.setVelocitiesAndDirection(0, 0)
+        }
+
+        this.setVelocitiesAndDirection = (backwardOrForward, leftOrRight) => {
+            this.steeringAngle = leftOrRight * this.maxSteeringAngle;
+            if (backwardOrForward && backwardOrForward != 0)
+                this.steer(backwardOrForward * -1)
         }
 
         this.move = () => {
@@ -91,6 +100,12 @@ export class Car {
             this.mspeed = this.steeringAngle - this.jointFrontRight.GetJointAngle();
             this.jointFrontRight.SetMotorSpeed(this.mspeed * this.STEER_SPEED);
             // console.log('move', 'mspeed', this.mspeed)
+        }
+
+        this.steer = (backwardOrForward) => {
+            this.frontRightWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3r.x * backwardOrForward,this.p3r.y * backwardOrForward),this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
+    
+            this.frontLeftWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3l.x * backwardOrForward,this.p3l.y * backwardOrForward),this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
         }
 
         this.steerBackward = () => {
@@ -118,9 +133,13 @@ export class Car {
             wheel.SetLinearVelocity(newworld);
         }
 
-        this.update = (goals) => {
+        this.update = (goals, backwardOrForward, leftOrRight) => {
 
+            this.setVelocitiesAndDirection(backwardOrForward, leftOrRight)
             this.carPosition = this.body.GetWorldCenter()
+
+            // this.path.push({x: this.carPosition.x, y: this.carPosition.y})
+
             this.move()
             this.cancelVel(this.frontRightWheel);
             this.cancelVel(this.frontLeftWheel);
@@ -136,9 +155,6 @@ export class Car {
             this.p2l = this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,1));
             this.p3l.x = (this.p2l.x - this.p1l.x)*this.ENGINE_SPEED;
             this.p3l.y = (this.p2l.y - this.p1l.y)*this.ENGINE_SPEED;
-                        
-            if(this.sf)  this.steerForward();
-            if(this.sb)  this.steerBackward();
     
             this.sensors.update(this.carPosition, this.body.GetAngle())
 
@@ -154,6 +170,15 @@ export class Car {
         this.draw = () => {
             this.sensors.drawLasers()
             this.drawGoalPoints()
+            this.drawPath()
+        }
+
+        this.drawPath = () => {
+            if (this.path && this.path.length > 0) {
+                this.path.forEach((point) => {
+                    this.drawDebugger.default.circle(point.x*this.scale,point.y*this.scale,1)
+                })
+            }
         }
 
         this.drawGoalPoints = () => {

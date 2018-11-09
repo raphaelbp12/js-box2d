@@ -99,7 +99,7 @@ function init() {
         let code = event.key;
         car.control(code, false)
     });
-  
+
   window.setInterval(update, 1000 / 60);
   
   //update  
@@ -123,7 +123,9 @@ function init() {
       }
     }
 
-    car.update(goals)
+    let backwardOrForward = -1, leftOrRight = 1
+
+    car.update(goals, backwardOrForward, leftOrRight)
 
     world.Step(1 / 60, 10, 10);
     world.DrawDebugData();
