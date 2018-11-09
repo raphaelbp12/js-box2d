@@ -84,8 +84,8 @@ function init() {
     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
     world.SetDebugDraw(debugDraw);
 
-    // let goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
-    let goals = [new Goal(world, 'goal 1', 15, 15)]
+    let goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
+    // let goals = [new Goal(world, 'goal 1', 15, 15)]
     draw.default.createDraw(ctx, worldDrawScale)
 
     let car = new Car(world, 5, 5, 2, draw)
@@ -110,10 +110,16 @@ function init() {
     if(contact) {
       console.log('fixA', contact.m_fixtureA.GetUserData(), 'fixB', contact.m_fixtureB.GetUserData())
       if ((contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf('goal') != -1 && (contact.m_fixtureB.GetUserData() == 'car' || contact.m_fixtureB.GetUserData() == 'wheel')) || ((contact.m_fixtureA.GetUserData() == 'car' || contact.m_fixtureA.GetUserData() == 'wheel') &&  contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf('goal') != -1)) {
+        let remainingGoals = []
         goals.forEach((goal) => {
           if(contact.m_fixtureA.GetUserData() == goal.fixture.GetUserData() || contact.m_fixtureB.GetUserData() == goal.fixture.GetUserData())
+          {
             world.DestroyBody(goal.body)
+          } else {
+            remainingGoals.push(goal)
+          }
         })
+        goals = remainingGoals
       }
     }
 

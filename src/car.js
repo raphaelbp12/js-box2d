@@ -187,22 +187,22 @@ export class Car {
             let aP = point
             let theta = this.body.GetAngle()
 
-            let rotationMatrix = [[Math.cos(theta), Math.sin(theta)],[-1*Math.sin(theta), Math.cos(theta)]]
+            let rotationMatrixT = [[Math.cos(theta), Math.sin(theta)],[-1*Math.sin(theta), Math.cos(theta)]] // it is already inverted
 
-            let vetorIntermediario = {x: aP.x - aTv.x, y: aP.y - aTv.y}
+            let vectorDiff = {x: aP.x - aTv.x, y: aP.y - aTv.y} // aP (transposed) - aTv
 
-            let vetorFinal = {x: (rotationMatrix[0][0]*vetorIntermediario.x)+(rotationMatrix[0][1]*vetorIntermediario.y), y: (rotationMatrix[1][0]*vetorIntermediario.x)+(rotationMatrix[1][1]*vetorIntermediario.y)}
+            let goalFromCarPerspective = {x: (rotationMatrixT[0][0]*vectorDiff.x)+(rotationMatrixT[0][1]*vectorDiff.y), y: (rotationMatrixT[1][0]*vectorDiff.x)+(rotationMatrixT[1][1]*vectorDiff.y)}
 
             let returnPoint = {}
             
-            returnPoint.distance = Math.sqrt(Math.pow((vetorFinal.x), 2) + Math.pow((vetorFinal.y), 2))
+            returnPoint.distance = Math.sqrt(Math.pow((goalFromCarPerspective.x), 2) + Math.pow((goalFromCarPerspective.y), 2))
 
             let difY = point.y - carPos.y
             let difX = point.x - carPos.x
 
-            let angle = (((Math.atan2(-1 * vetorFinal.y, vetorFinal.x) - (Math.PI / 2)) * -1) + 2 * Math.PI) % (2 * Math.PI)
+            let angle = (((Math.atan2(-1 * goalFromCarPerspective.y, goalFromCarPerspective.x) - (Math.PI / 2)) * -1) + 2 * Math.PI) % (2 * Math.PI)
 
-            console.log('vetorFinal', vetorFinal, 'difY', difY, 'difX', difX, 'dist', returnPoint.distance, 'angle', angle, 'theta', theta)
+            // console.log('vetorFinal', vetorFinal, 'difY', difY, 'difX', difX, 'dist', returnPoint.distance, 'angle', angle, 'theta', theta)
 
             returnPoint.angle = angle
 
