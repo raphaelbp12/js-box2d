@@ -3,10 +3,10 @@ export class Sensors {
         this.drawDebugger = draw
         this.world = world
         this.scale = scale
-        //this.laserDegrees= [0]
-        this.laserDegrees = [0, 1/8 * Math.PI, 2/8 * Math.PI, 3/8 * Math.PI, 4/8* Math.PI, 5/8 * Math.PI, 6/8 * Math.PI, 7/8 * Math.PI, 8/8 *Math.PI, 9/8 * Math.PI, 10/8 * Math.PI, 11/8 * Math.PI, 12/8 *Math.PI, 13/8 * Math.PI, 14/8 * Math.PI, 15/8 * Math.PI]
+        this.laserDegrees= [0]
+        // this.laserDegrees = [0, 1/8 * Math.PI, 2/8 * Math.PI, 3/8 * Math.PI, 4/8* Math.PI, 5/8 * Math.PI, 6/8 * Math.PI, 7/8 * Math.PI, 8/8 *Math.PI, 9/8 * Math.PI, 10/8 * Math.PI, 11/8 * Math.PI, 12/8 *Math.PI, 13/8 * Math.PI, 14/8 * Math.PI, 15/8 * Math.PI]
         this.laserPoints= []
-        this.laserRadius= 5
+        this.laserRadius= 25
         this.laserImpactPoints= {}
         this.laserImpactDistances= {}
         this.carCenter= null
@@ -60,9 +60,9 @@ export class Sensors {
                     this.drawDebugger.default.circle(this.laserImpactPoints[key].x,this.laserImpactPoints[key].y,3)
                 })
             }
-            if (this.laserImpactDistances && Object.keys(this.laserImpactDistances).length > 0) {
-                console.log('distances', this.laserImpactDistances)
-            }
+            // if (this.laserImpactDistances && Object.keys(this.laserImpactDistances).length > 0) {
+            //     console.log('distances', this.laserImpactDistances)
+            // }
         }
     }
 }

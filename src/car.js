@@ -4,6 +4,9 @@ export class Car {
     constructor(world, x, y, scale, draw) {
         this.sensors = new Sensors(world, scale, draw)
 
+        this.goals = []
+        this.goalPoints = []
+
         this.drawDebugger = draw
         this.bodyDef = new Box2D.Dynamics.b2BodyDef;
         this.bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -18,11 +21,13 @@ export class Car {
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
         
-        this.car = world.CreateBody(this.bodyDef)
-        this.car.CreateFixture(this.fixDef);
+        this.body = world.CreateBody(this.bodyDef)
+        this.body.CreateFixture(this.fixDef);
 
-        this.xx = this.car.GetWorldCenter().x;
-        this.yy = this.car.GetWorldCenter().y;
+        this.carPosition = this.body.GetWorldCenter()
+
+        this.xx = this.body.GetWorldCenter().x;
+        this.yy = this.body.GetWorldCenter().y;
 
         this.maxSteeringAngle = 1
         this.steeringAngle = 0
@@ -75,9 +80,9 @@ export class Car {
             if(code == 'd' || code == 'ArrowRight') //RIGHT
                 this.steeringAngle = isDown ? this.maxSteeringAngle : 0;
             if(code == 'w' || code == 'ArrowUp') //FORWARD
-                this.sb = isDown;
-            if(code == 's' || code == 'ArrowDown') //BACKWARD
                 this.sf = isDown;
+            if(code == 's' || code == 'ArrowDown') //BACKWARD
+                this.sb = isDown;
         }
 
         this.move = () => {
@@ -88,13 +93,13 @@ export class Car {
             // console.log('move', 'mspeed', this.mspeed)
         }
 
-        this.steerForward = () => {
+        this.steerBackward = () => {
             this.frontRightWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3r.x,this.p3r.y),this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
     
             this.frontLeftWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(this.p3l.x,this.p3l.y),this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
         }
 
-        this.steerBackward = () => {
+        this.steerForward = () => {
             this.frontRightWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(-this.p3r.x,-this.p3r.y),this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
     
             this.frontLeftWheel.ApplyForce(new Box2D.Common.Math.b2Vec2(-this.p3l.x,-this.p3l.y),this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,0)));
@@ -113,7 +118,9 @@ export class Car {
             wheel.SetLinearVelocity(newworld);
         }
 
-        this.update = () => {
+        this.update = (goals) => {
+
+            this.carPosition = this.body.GetWorldCenter()
             this.move()
             this.cancelVel(this.frontRightWheel);
             this.cancelVel(this.frontLeftWheel);
@@ -133,21 +140,77 @@ export class Car {
             if(this.sf)  this.steerForward();
             if(this.sb)  this.steerBackward();
     
-            this.sensors.update(this.car.GetWorldCenter(), this.car.GetAngle())
+            this.sensors.update(this.carPosition, this.body.GetAngle())
+
+            this.goals = goals
+
+            this.goalPoints = []
+            this.goals.forEach((goal) => {
+                let angleAndDistance = this.angleRelativePoint(goal.getPosition())
+                this.goalPoints.push(angleAndDistance)
+            })
         }
+
         this.draw = () => {
             this.sensors.drawLasers()
+            this.drawGoalPoints()
         }
+
+        this.drawGoalPoints = () => {
+            if (this.goalPoints && this.goalPoints.length > 0) {
+                this.goalPoints.forEach((angleAndDistance) => {
+                    let angle = angleAndDistance.angle + this.body.GetAngle() + Math.PI
+                    let x = this.carPosition.x - angleAndDistance.distance * Math.sin(angle)
+                    let y = this.carPosition.y + angleAndDistance.distance * Math.cos(angle)
+
+                    this.drawDebugger.default.line(this.carPosition.x, this.carPosition.y, x, y)
+                    this.drawDebugger.default.circle(x,y,1)
+                })
+            }
+        }
+
         this.getBody = () => {
             // console.log('circle getBody', this.bodyDef)
             return this.fixture.GetBody()
         }
+
         this.getFixture = () => {
             // console.log('circle getFixture', this.fixture)
             return this.fixture
         }
-        this.setVelocity = (linearVel, angularVel) => {
-            this.bodyDef.linearVelocity = vector
+
+        this.angleRelativePoint = (point) => {
+
+            let carPos = this.carPosition
+
+            let aTv = carPos
+            let aP = point
+            let theta = this.body.GetAngle()
+
+            let rotationMatrix = [[Math.cos(theta), Math.sin(theta)],[-1*Math.sin(theta), Math.cos(theta)]]
+
+            let vetorIntermediario = {x: aP.x - aTv.x, y: aP.y - aTv.y}
+
+            let vetorFinal = {x: (rotationMatrix[0][0]*vetorIntermediario.x)+(rotationMatrix[0][1]*vetorIntermediario.y), y: (rotationMatrix[1][0]*vetorIntermediario.x)+(rotationMatrix[1][1]*vetorIntermediario.y)}
+
+            let returnPoint = {}
+            
+            returnPoint.distance = Math.sqrt(Math.pow((vetorFinal.x), 2) + Math.pow((vetorFinal.y), 2))
+
+            let difY = point.y - carPos.y
+            let difX = point.x - carPos.x
+
+            let angle = (((Math.atan2(-1 * vetorFinal.y, vetorFinal.x) - (Math.PI / 2)) * -1) + 2 * Math.PI) % (2 * Math.PI)
+
+            console.log('vetorFinal', vetorFinal, 'difY', difY, 'difX', difX, 'dist', returnPoint.distance, 'angle', angle, 'theta', theta)
+
+            returnPoint.angle = angle
+
+            
+
+            // console.log('goal angle', angle % (Math.PI*2))
+
+            return returnPoint
         }
 
         this.frontRightWheel = this.createWheel(world, this.xx+(0.1*scale), this.yy-(0.2*scale), scale)
@@ -155,9 +218,9 @@ export class Car {
         this.rearRightWheel = this.createWheel(world, this.xx+(0.1*scale), this.yy+(0.2*scale), scale)
         this.rearLeftWheel = this.createWheel(world, this.xx-(0.1*scale), this.yy+(0.2*scale), scale)
 
-        this.jointFrontRight = this.createRevJoint(world, this.car, this.frontRightWheel, scale)
-        this.jointFrontLeft = this.createRevJoint(world, this.car, this.frontLeftWheel, scale)
-        this.jointRearRight = this.createRevJoint(world, this.car, this.rearRightWheel, scale)
-        this.jointRearLeft = this.createRevJoint(world, this.car, this.rearLeftWheel, scale)
+        this.jointFrontRight = this.createRevJoint(world, this.body, this.frontRightWheel, scale)
+        this.jointFrontLeft = this.createRevJoint(world, this.body, this.frontLeftWheel, scale)
+        this.jointRearRight = this.createRevJoint(world, this.body, this.rearRightWheel, scale)
+        this.jointRearLeft = this.createRevJoint(world, this.body, this.rearLeftWheel, scale)
     }
 }

@@ -6,8 +6,8 @@ const contactListener = {
         let fixA = contact.GetFixtureA()
         let fixB = contact.GetFixtureB()
 
-        if (fixA.GetType() == fixB.GetType()) {
-            console.log('as fix sao iguais', fixA.GetType(), fixB.GetType())
+        if ((fixA.GetUserData() == 'car' &&  fixB.GetUserData() == 'goal') || (fixA.GetUserData() == 'goal' &&  fixB.GetUserData() == 'car')) {
+            console.log('chegou no goal', contact)
             contact.SetEnabled(false)
         }
     },
@@ -21,6 +21,7 @@ const contactListener = {
         // console.log('PreSolve', contact)
     },
     getBeginContact: function() {
+        // console.log('getBeginContact', this.beginContact)
         let ret = this.beginContact
         this.beginContact = null
         return ret

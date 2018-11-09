@@ -1,4 +1,4 @@
-import {Car} from './car.js'
+import { Car } from './car.js'
 import { Goal } from './goal.js'
 import contactListener from './contactListener.js'
 import draw from './draw.js'
@@ -84,10 +84,11 @@ function init() {
     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
     world.SetDebugDraw(debugDraw);
 
-    let goal = new Goal(world)
+    // let goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
+    let goals = [new Goal(world, 'goal 1', 15, 15)]
     draw.default.createDraw(ctx, worldDrawScale)
 
-    let car = new Car(world, 20, 10, 2, draw)
+    let car = new Car(world, 5, 5, 2, draw)
     // car.default.createCar(world, 20, 10, 2, draw)
 
     document.addEventListener('keydown', (event) => {
@@ -104,11 +105,25 @@ function init() {
   //update  
   function update() {
 
-    car.update()
+    let contact = contactListener.default.getBeginContact()
+
+    if(contact) {
+      console.log('fixA', contact.m_fixtureA.GetUserData(), 'fixB', contact.m_fixtureB.GetUserData())
+      if ((contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf('goal') != -1 && (contact.m_fixtureB.GetUserData() == 'car' || contact.m_fixtureB.GetUserData() == 'wheel')) || ((contact.m_fixtureA.GetUserData() == 'car' || contact.m_fixtureA.GetUserData() == 'wheel') &&  contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf('goal') != -1)) {
+        goals.forEach((goal) => {
+          if(contact.m_fixtureA.GetUserData() == goal.fixture.GetUserData() || contact.m_fixtureB.GetUserData() == goal.fixture.GetUserData())
+            world.DestroyBody(goal.body)
+        })
+      }
+    }
+
+    car.update(goals)
 
     world.Step(1 / 60, 10, 10);
     world.DrawDebugData();
     world.ClearForces();
+
+    // console.log('************************************')
 
     car.draw()
   };
