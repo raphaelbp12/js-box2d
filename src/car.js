@@ -172,6 +172,8 @@ export class Car {
                 let angleAndDistance = this.angleRelativePoint(goal.getPosition())
                 this.goalPoints.push(angleAndDistance)
             })
+
+            // console.log('orientation', this.getOrientation())
         }
 
         this.getSensorsDistances = () => {
@@ -185,6 +187,7 @@ export class Car {
             let ret = this.getSensorsDistances()
             ret.push(this.goalPoints[0].angle / Math.PI)
             ret.push(this.goalPoints[0].distance / 40)
+            ret.push((this.getOrientation() / Math.PI))
             // console.log('getCarInputsToFirstLayer', ret)
             return ret
         }
@@ -225,6 +228,18 @@ export class Car {
         this.getFixture = () => {
             // console.log('circle getFixture', this.fixture)
             return this.fixture
+        }
+
+        this.getOrientation = () => {
+            let angle = this.body.GetAngle() % (Math.PI * 2)
+
+            if (angle > 0 && angle > Math.PI) {
+                angle = angle - (Math.PI * 2)
+            } else if(angle < 0 && angle < (Math.PI * -1)) {
+                angle = angle + (Math.PI * 2)
+            }
+
+            return angle
         }
 
         this.angleRelativePoint = (point) => {
