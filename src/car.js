@@ -65,12 +65,19 @@ export class Car {
             return wheel;
         }
 
-        this.createRevJoint = (world, body1, wheel, scale) => {
+        this.createRevJoint = (world, body1, wheel, scale, limited) => {
             let revoluteJointDef = new Box2D.Dynamics.Joints.b2RevoluteJointDef;
             revoluteJointDef.Initialize(body1, wheel, wheel.GetWorldCenter());
             revoluteJointDef.motorSpeed = 0;
             revoluteJointDef.maxMotorTorque = 200*scale;
             revoluteJointDef.enableMotor = true;
+
+            if (limited) {
+                revoluteJointDef.enableLimit = true
+                revoluteJointDef.lowerAngle = 0
+                revoluteJointDef.upperAngle = 0
+            }
+
             let revoluteJoint = world.CreateJoint(revoluteJointDef);
             return revoluteJoint;
     
@@ -168,7 +175,7 @@ export class Car {
         }
 
         this.draw = () => {
-            this.sensors.drawLasers()
+            // this.sensors.drawLasers()
             this.drawGoalPoints()
             this.drawPath()
         }
@@ -185,6 +192,7 @@ export class Car {
             if (this.goalPoints && this.goalPoints.length > 0) {
                 this.goalPoints.forEach((angleAndDistance) => {
                     let angle = angleAndDistance.angle + this.body.GetAngle() + Math.PI
+                    
                     let x = this.carPosition.x - angleAndDistance.distance * Math.sin(angle)
                     let y = this.carPosition.y + angleAndDistance.distance * Math.cos(angle)
 
@@ -222,12 +230,13 @@ export class Car {
             
             returnPoint.distance = Math.sqrt(Math.pow((goalFromCarPerspective.x), 2) + Math.pow((goalFromCarPerspective.y), 2))
 
-            let difY = point.y - carPos.y
-            let difX = point.x - carPos.x
-
             let angle = (((Math.atan2(-1 * goalFromCarPerspective.y, goalFromCarPerspective.x) - (Math.PI / 2)) * -1) + 2 * Math.PI) % (2 * Math.PI)
 
-            // console.log('vetorFinal', vetorFinal, 'difY', difY, 'difX', difX, 'dist', returnPoint.distance, 'angle', angle, 'theta', theta)
+            if (angle > Math.PI) {
+                angle = angle - (Math.PI * 2)
+            }
+
+            console.log('angle', angle)
 
             returnPoint.angle = angle
 
@@ -245,7 +254,7 @@ export class Car {
 
         this.jointFrontRight = this.createRevJoint(world, this.body, this.frontRightWheel, scale)
         this.jointFrontLeft = this.createRevJoint(world, this.body, this.frontLeftWheel, scale)
-        this.jointRearRight = this.createRevJoint(world, this.body, this.rearRightWheel, scale)
-        this.jointRearLeft = this.createRevJoint(world, this.body, this.rearLeftWheel, scale)
+        this.jointRearRight = this.createRevJoint(world, this.body, this.rearRightWheel, scale, true)
+        this.jointRearLeft = this.createRevJoint(world, this.body, this.rearLeftWheel, scale, true)
     }
 }

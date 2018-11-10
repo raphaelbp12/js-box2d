@@ -84,20 +84,36 @@ function init() {
     debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_controllerBit);
     world.SetDebugDraw(debugDraw);
 
-    let goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
-    // let goals = [new Goal(world, 'goal 1', 15, 15)]
+    // let goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
+    let goals = [new Goal(world, 'goal 1', 15, 15)]
     draw.default.createDraw(ctx, worldDrawScale)
 
-    let car = new Car(world, 5, 5, 2, draw)
+    let car = new Car(world, 25, 5, 2, draw)
     // car.default.createCar(world, 20, 10, 2, draw)
+
+    let backwardOrForward = 0, leftOrRight = 0
 
     document.addEventListener('keydown', (event) => {
         let code = event.key;
-        car.control(code, true)
+        if(code == 'a' || code == 'ArrowLeft' ) //LEFT
+          leftOrRight = -1
+        if(code == 'd' || code == 'ArrowRight') //RIGHT
+          leftOrRight = 1
+        if(code == 'w' || code == 'ArrowUp') //FORWARD
+          backwardOrForward = 1
+        if(code == 's' || code == 'ArrowDown') //BACKWARD
+          backwardOrForward = -1
     });
     document.addEventListener('keyup', (event) => {
-        let code = event.key;
-        car.control(code, false)
+      let code = event.key;
+      if(code == 'a' || code == 'ArrowLeft' ) //LEFT
+        leftOrRight = 0
+      if(code == 'd' || code == 'ArrowRight') //RIGHT
+        leftOrRight = 0
+      if(code == 'w' || code == 'ArrowUp') //FORWARD
+        backwardOrForward = 0
+      if(code == 's' || code == 'ArrowDown') //BACKWARD
+        backwardOrForward = 0
     });
 
   window.setInterval(update, 1000 / 60);
@@ -123,7 +139,7 @@ function init() {
       }
     }
 
-    let backwardOrForward = -1, leftOrRight = 1
+    // let backwardOrForward = 0, leftOrRight = 0
 
     car.update(goals, backwardOrForward, leftOrRight)
 
