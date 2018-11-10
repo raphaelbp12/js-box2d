@@ -7,11 +7,13 @@ Box2d Docs: http://www.box2dflash.org/docs/2.1a/reference/
 
 ## Running
 
-`npm i`
+* Install nodeJS from https://nodejs.org/en/
 
-`npm run dev`
+* Install all packages:  `npm i`
 
-Access http://localhost:8080/ on your Browser
+* Run app:  `npm run dev`
+
+* Access http://localhost:8080/ on your Browser
 
 ## Changes in Box2d Source
 
