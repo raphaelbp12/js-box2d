@@ -1,5 +1,6 @@
 import { Car } from './car.js'
 import { Goal } from './goal.js'
+import { Layer } from './NeuralNetwork/layer.js'
 import contactListener from './contactListener.js'
 import draw from './draw.js'
 
@@ -93,30 +94,39 @@ function init() {
 
     let backwardOrForward = 0, leftOrRight = 0
 
-    document.addEventListener('keydown', (event) => {
-        let code = event.key;
-        if(code == 'a' || code == 'ArrowLeft' ) //LEFT
-          leftOrRight = -1
-        if(code == 'd' || code == 'ArrowRight') //RIGHT
-          leftOrRight = 1
-        if(code == 'w' || code == 'ArrowUp') //FORWARD
-          backwardOrForward = 1
-        if(code == 's' || code == 'ArrowDown') //BACKWARD
-          backwardOrForward = -1
-    });
-    document.addEventListener('keyup', (event) => {
-      let code = event.key;
-      if(code == 'a' || code == 'ArrowLeft' ) //LEFT
-        leftOrRight = 0
-      if(code == 'd' || code == 'ArrowRight') //RIGHT
-        leftOrRight = 0
-      if(code == 'w' || code == 'ArrowUp') //FORWARD
-        backwardOrForward = 0
-      if(code == 's' || code == 'ArrowDown') //BACKWARD
-        backwardOrForward = 0
-    });
+    // document.addEventListener('keydown', (event) => {
+    //     let code = event.key;
+    //     if(code == 'a' || code == 'ArrowLeft' ) //LEFT
+    //       leftOrRight = -1
+    //     if(code == 'd' || code == 'ArrowRight') //RIGHT
+    //       leftOrRight = 1
+    //     if(code == 'w' || code == 'ArrowUp') //FORWARD
+    //       backwardOrForward = 1
+    //     if(code == 's' || code == 'ArrowDown') //BACKWARD
+    //       backwardOrForward = -1
+    // });
+    // document.addEventListener('keyup', (event) => {
+    //   let code = event.key;
+    //   if(code == 'a' || code == 'ArrowLeft' ) //LEFT
+    //     leftOrRight = 0
+    //   if(code == 'd' || code == 'ArrowRight') //RIGHT
+    //     leftOrRight = 0
+    //   if(code == 'w' || code == 'ArrowUp') //FORWARD
+    //     backwardOrForward = 0
+    //   if(code == 's' || code == 'ArrowDown') //BACKWARD
+    //     backwardOrForward = 0
+    // });
 
+    
+
+    // document.addEventListener('keydown', (event) => {
+    //   let code = event.key;
+    //   if(code == 'r') //LEFT
+    //     update()
+    // });
   window.setInterval(update, 1000 / 60);
+
+  let layers = []
   
   //update  
   function update() {
@@ -141,7 +151,27 @@ function init() {
 
     // let backwardOrForward = 0, leftOrRight = 0
 
-    car.update(goals, backwardOrForward, leftOrRight)
+    if (layers[3]) {
+      let outputs = layers[3].getOutputs()
+      car.update(goals, outputs[0], outputs[1])
+      console.log('outputs', outputs)
+    } else {
+      car.update(goals, 0, 0)
+    }
+
+    let newLayers = []
+
+    newLayers.push(new Layer(car.getCarInputsToFirstLayer()))
+    newLayers.push(new Layer(null, 60, newLayers[0].neurons, layers[1] ? layers[1].getWeights() : null))
+    newLayers.push(new Layer(null, 60, newLayers[1].neurons, layers[2] ? layers[2].getWeights() : null))
+    newLayers.push(new Layer(null, 2, newLayers[2].neurons, layers[3] ? layers[3].getWeights() : null))
+
+    layers = newLayers
+
+    // layers.forEach((layer, index) => {
+    //   console.log('layer getOutputs', index, layer.getOutputs())
+    //   console.log('************************************')
+    // })
 
     world.Step(1 / 60, 10, 10);
     world.DrawDebugData();

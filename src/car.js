@@ -174,6 +174,21 @@ export class Car {
             })
         }
 
+        this.getSensorsDistances = () => {
+            let laserImpactDistances = this.sensors.laserImpactDistances
+            return Object.keys(laserImpactDistances).map((key) => {
+                return laserImpactDistances[key]/40.0
+            })
+        }
+
+        this.getCarInputsToFirstLayer = () => {
+            let ret = this.getSensorsDistances()
+            ret.push(this.goalPoints[0].angle / Math.PI)
+            ret.push(this.goalPoints[0].distance / 40)
+            // console.log('getCarInputsToFirstLayer', ret)
+            return ret
+        }
+
         this.draw = () => {
             // this.sensors.drawLasers()
             this.drawGoalPoints()
@@ -236,7 +251,7 @@ export class Car {
                 angle = angle - (Math.PI * 2)
             }
 
-            console.log('angle', angle)
+            // console.log('angle', angle)
 
             returnPoint.angle = angle
 
