@@ -140,7 +140,7 @@ export class Car {
             wheel.SetLinearVelocity(newworld);
         }
 
-        this.update = (goals, backwardOrForward, leftOrRight) => {
+        this.update = (backwardOrForward, leftOrRight) => {
 
             this.setVelocitiesAndDirection(backwardOrForward, leftOrRight)
             this.carPosition = this.body.GetWorldCenter()
@@ -165,15 +165,7 @@ export class Car {
     
             this.sensors.update(this.carPosition, this.body.GetAngle())
 
-            this.goals = goals
-
-            this.goalPoints = []
-            this.goals.forEach((goal) => {
-                let angleAndDistance = this.angleRelativePoint(goal.getPosition())
-                this.goalPoints.push(angleAndDistance)
-            })
-
-            // console.log('orientation', this.getOrientation())
+            // console.log('linear velocity', this.body.GetLinearVelocity())
         }
 
         this.getSensorsDistances = () => {
@@ -183,12 +175,15 @@ export class Car {
             })
         }
 
-        this.getCarInputsToFirstLayer = () => {
+        this.getCarInputsToFirstLayer = (goalPosition) => {
             let ret = this.getSensorsDistances()
-            ret.push(this.goalPoints[0].angle / Math.PI)
-            ret.push(this.goalPoints[0].distance / 40)
+            let goalAngleAndDistance = this.angleRelativePoint(goalPosition)
+            ret.push(goalAngleAndDistance.angle / Math.PI)
+            ret.push(goalAngleAndDistance.distance / 40)
             ret.push((this.getOrientation() / Math.PI))
-            // console.log('getCarInputsToFirstLayer', ret)
+            ret.push(this.body.GetLinearVelocity().x / 25)
+            ret.push(this.body.GetLinearVelocity().y / 25)
+            // console.log('getCarInputsToFirstLayer', ret, goalPosition)
             return ret
         }
 
