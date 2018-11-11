@@ -1,12 +1,13 @@
 import { World } from './world.js'
 import { WorldDrawer } from './worldDrawer.js'
+import { GenericWebWorker } from './GenericWebWorker.js'
 
 function init() {  
 
   var canvas = document.getElementById("canvas")
   var world = new WorldDrawer(30, canvas)
 
-  let numPopulation = 1500
+  let numPopulation = 1
   let population = []
 
   for(let i = 0; i < numPopulation; i++) {
@@ -51,6 +52,27 @@ function init() {
   let gameoverCounter = 0
 
   update()
+
+  function test () {
+    return 1
+  }
+  
+  let gw = new GenericWebWorker({foo: 23, bar: "ii"}, test)
+  gw.exec((data, fun1)=>{
+      var a = 0
+      for (var i = 0; i < 1000; i++) //blocking code
+      {
+        // console.log('******* i', i)
+        a += i
+      }
+  
+      console.log(data) //{foo: 23, bar: "ii"}
+      return fun1()
+  })
+  .then(data => {
+    console.log('#####################', data+1)
+  }) //print Hello there
+  .catch(e=> {})
   
   //update  
   function update() {
@@ -71,7 +93,7 @@ function init() {
       }
     })
 
-    // world.drawAllWorlds(allWorlds)
+    world.drawAllWorlds(allWorlds)
     world.update()
 
     // console.log('update called', gameoverCounter, population.length)

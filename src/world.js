@@ -205,10 +205,24 @@ export class World {
               firstGoal = this.goals[0].getPosition()
             }
         
-            newLayers.push(new Layer(this.car.getCarInputsToFirstLayer(firstGoal)))
-            newLayers.push(new Layer(null, 20, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
+            new Layer(this.car.getCarInputsToFirstLayer(firstGoal))
+            .then((layer) => {
+                newLayers.push(layer)
+                new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null)
+                .then((layer) => {
+                    newLayers.push(layer)
+                    new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null)
+                    .then((layer) => {
+                        newLayers.push(layer)
+                    })
+                })
+            })
+            
+            
+            // newLayers.push(new Layer(this.car.getCarInputsToFirstLayer(firstGoal)))
+            // newLayers.push(new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
             // newLayers.push(new Layer(null, 60, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
-            newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
+            // newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
         
             this.layers = newLayers
         
