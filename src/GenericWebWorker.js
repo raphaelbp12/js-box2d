@@ -12,20 +12,27 @@ export class GenericWebWorker {
     * @param {any} data, Any kind of arguments that will be used in the callback, functions too
     */
     constructor(...data) {
-        console.log('GenericWebWorker created')
+        // console.log('GenericWebWorker created')
         //The arguments that will be passed to the callback
         this.args = data.map(a => (typeof a == 'function') ? {type:'fn', fn:a.toString()} : a)
     }
 
     //@param {function} cb, To be executed, the params must be the same number of passed in the constructor 
     async exec(cb) {
-        console.log('GenericWebWorker execing')
+        // console.log('GenericWebWorker execing', cb, window)
         var wk_string = this.worker.toString();
-        wk_string = wk_string.substring(wk_string.indexOf('{') + 1, wk_string.lastIndexOf('}'));            
+        wk_string = wk_string.substring(wk_string.indexOf('{') + 1, wk_string.lastIndexOf('}'));
+        // console.log('wk_string', wk_string)
         var wk_link = window.URL.createObjectURL( new Blob([ wk_string ]) );
+        // console.log('wk_link', wk_link)
         var wk = new Worker(wk_link);
 
-        wk.postMessage({ callback: cb.toString(), args: this.args });
+        // console.log('this.args', this.args)
+        let objStr = JSON.stringify(this.args)
+        // console.log('objStr', objStr)
+        let obj = JSON.parse(objStr);
+        // console.log('obj', obj)
+        wk.postMessage({ callback: cb.toString(), args: obj });
  
         var result = await new Promise((next, error) => {
             wk.onmessage = e => (e.data && e.data.error) ? error(e.data.error) : next(e.data);
@@ -38,8 +45,9 @@ export class GenericWebWorker {
 
     worker() {
         onmessage = async function (e) {
+            // console.log('onmessage', e)
             try {         
-                console.log('GenericWebWorker onmessage')       
+                // console.log('GenericWebWorker onmessage')       
                 var cb = new Function(`return ${e.data.callback}`)();
                 var args = e.data.args.map(p => (p.type == 'fn') ? new Function(`return ${p.fn}`)() : p);
 

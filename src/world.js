@@ -180,57 +180,64 @@ export class World {
         }
 
         this.neuralNetwork = () => {
-            // console.log('neuralNetworks initiated')
-            // console.log('this.car.getSensorsDistances()', this.car.getSensorsDistances())
-            if (!this.car.getSensorsDistances() || this.car.getSensorsDistances().length != 16) {
-                this.backwardOrForward = 0
-                this.leftOrRight = 0
-                return false
-            }
-            if (this.layers[2]) {
-              let outputs = this.layers[2].getOutputs()
-              this.backwardOrForward = outputs[0]
-              this.leftOrRight = outputs[1]
-            //   console.log('outputs', outputs)
-            } else {
-                this.backwardOrForward = 0
-                this.leftOrRight = 0
-            }
+            return new Promise((resolve, reject) => {
+                // console.log('neuralNetworks initiated')
+                // console.log('this.car.getSensorsDistances()', this.car.getSensorsDistances())
+                if (!this.car.getSensorsDistances() || this.car.getSensorsDistances().length != 16) {
+                    this.backwardOrForward = 0
+                    this.leftOrRight = 0
+                    resolve()
+                    return false
+                }
 
-            let newLayers = []
-        
-            let firstGoal = {angle: 0, distance: 0}
-        
-            if (this.goals && this.goals.length > 0) {
-              firstGoal = this.goals[0].getPosition()
-            }
-        
-            new Layer(this.car.getCarInputsToFirstLayer(firstGoal))
-            .then((layer) => {
-                newLayers.push(layer)
-                new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null)
+                let newLayers = []
+            
+                let firstGoal = {angle: 0, distance: 0}
+            
+                if (this.goals && this.goals.length > 0) {
+                firstGoal = this.goals[0].getPosition()
+                }
+            
+                new Layer(this.car.getCarInputsToFirstLayer(firstGoal))
                 .then((layer) => {
                     newLayers.push(layer)
-                    new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null)
+                    new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null)
                     .then((layer) => {
                         newLayers.push(layer)
+                        new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null)
+                        .then((layer) => {
+                            newLayers.push(layer)
+
+                            if (this.layers[2]) {
+                            let outputs = this.layers[2].getOutputs()
+                            this.backwardOrForward = outputs[0]
+                            this.leftOrRight = outputs[1]
+                            //   console.log('outputs', outputs)
+                            } else {
+                                this.backwardOrForward = 0
+                                this.leftOrRight = 0
+                            }
+
+                            this.layers = newLayers
+                            resolve()
+                        })
                     })
                 })
+                
+                
+                // newLayers.push(new Layer(this.car.getCarInputsToFirstLayer(firstGoal)))
+                // newLayers.push(new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
+                // newLayers.push(new Layer(null, 60, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
+                // newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
+            
+            
+                // this.layers.forEach((layer, index) => {
+                //   console.log('layer getOutputs', index, layer.getOutputs())
+                //   console.log('************************************')
+                // })
+                // console.log('neuralNetworks ended')
             })
             
-            
-            // newLayers.push(new Layer(this.car.getCarInputsToFirstLayer(firstGoal)))
-            // newLayers.push(new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
-            // newLayers.push(new Layer(null, 60, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
-            // newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
-        
-            this.layers = newLayers
-        
-            // this.layers.forEach((layer, index) => {
-            //   console.log('layer getOutputs', index, layer.getOutputs())
-            //   console.log('************************************')
-            // })
-            // console.log('neuralNetworks ended')
         }
 
         this.drawWorld = () => {
@@ -238,21 +245,7 @@ export class World {
             // this.car.draw()
         }
 
-        this.update = (draw, velocities) => {
-            this.ticks = this.ticks + 1
-            let contact = contactListener.default.getBeginContact()
-            this.verifyContactToGoal(contact)
-            this.verifyContactToWall(contact)
-
-            this.calcGameOver()
-
-            if (velocities) {
-                this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
-            } else {
-                this.neuralNetwork()
-                this.car.update(this.backwardOrForward, this.leftOrRight)
-            }
-
+        this.step = (draw) => {
             this.world.Step(1 / 60, 10, 10);
             this.world.ClearForces();
 
@@ -260,6 +253,30 @@ export class World {
 
             if (draw)
                 this.drawWorld()
+
+        }
+
+        this.update = (draw, velocities) => {
+            return new Promise((resolve, reject) => {
+                this.ticks = this.ticks + 1
+                let contact = contactListener.default.getBeginContact()
+                this.verifyContactToGoal(contact)
+                this.verifyContactToWall(contact)
+    
+                this.calcGameOver()
+    
+                if (velocities) {
+                    this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                    this.step(draw)
+                    resolve(this)
+                } else {
+                    this.neuralNetwork().then(() => {
+                        this.car.update(this.backwardOrForward, this.leftOrRight)
+                        this.step(draw)
+                        resolve(this)
+                    })
+                }
+            })
         }
     }
 }

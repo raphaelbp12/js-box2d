@@ -2,7 +2,6 @@ import { Neuron } from './neuron.js'
 
 export class Layer {
     constructor(inputs, length, neuronsPreviousLayer, receivedWeights) {
-        this.activationValue = 0
         this.neurons = []
 
         this.getInputs = (inputs) => {
