@@ -1,12 +1,12 @@
 import { World } from './world.js'
 import { WorldDrawer } from './worldDrawer.js'
 
-function init() {  
+function init() {
 
   var canvas = document.getElementById("canvas")
   var world = new WorldDrawer(30, canvas)
 
-  let numPopulation = 1500
+  let numPopulation = 1
   let population = []
 
   for(let i = 0; i < numPopulation; i++) {
@@ -62,7 +62,7 @@ function init() {
     population.forEach((person, index) => {
       allWorlds.push({car: person.car, gameover: person.gameover})
       if(!person.gameover) {
-        person.update(false)
+        person.update(true, {backwardOrForward: 1, leftOrRight: 0})
         // console.log('world update called', index)
         if(person.gameover) {
           console.log('gameoverCounter incresed', gameoverCounter)
@@ -72,7 +72,7 @@ function init() {
     })
 
     // world.drawAllWorlds(allWorlds)
-    world.update()
+    // world.update()
 
     // console.log('update called', gameoverCounter, population.length)
 

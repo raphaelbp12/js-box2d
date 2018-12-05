@@ -127,7 +127,7 @@ export class World {
         }
 
         this.verifyContactToWall = (contact) => {
-            let contacted = this.verifyContact(contact, 'car', 'wall')
+            let contacted = this.verifyContact(contact, 'wheel', 'wall')
 
             if(contacted) {
                 if(this.ticksOnCrashToWall && this.ticksOnCrashToWall.length > 0) {

@@ -21,6 +21,7 @@ export class Car {
         this.fixDef.friction = 4.0/scale;
         this.fixDef.restitution = 0.1;
         this.fixDef.userData = "car";
+        this.fixDef.isSensor = true;
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
         
@@ -57,6 +58,7 @@ export class Car {
             fixDef.friction = 40/scale;
             fixDef.restitution = 0.1;
             fixDef.userData = "wheel";
+            fixDef.isSensor = true;
             fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
             fixDef.shape.SetAsBox(.04*scale,.08*scale);
             fixDef.isSensor = true;
