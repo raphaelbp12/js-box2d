@@ -130,6 +130,9 @@ export class Car {
         }
 
         this.calcGameOver = (ticks) => {
+            if (this.gameover)
+                return this.gameover
+
             this.ticks = ticks
 
             let maxSeconds = 5
@@ -276,16 +279,22 @@ export class Car {
             wheel.SetLinearVelocity(newworld);
         }
 
-        this.updateWithNeuralNetwork = () => {
+        this.updateWithNeuralNetwork = (velocities) => {
         
             this.sensors.update(this.carPosition, this.body.GetAngle())
             return new Promise((resolve, reject) => {
-                this.neuralNetwork().then((vel) => {
-                    // console.log('neural vel', vel)
-                    this.update(vel.backwardOrForward, vel.leftOrRight).then(() => {
+                if(velocities) {
+                    this.update(velocities.backwardOrForward, velocities.leftOrRight).then(() => {
                         resolve()
                     })
-                })
+                } else {
+                    this.neuralNetwork().then((vel) => {
+                        // console.log('neural vel', vel)
+                        this.update(velocities.backwardOrForward, velocities.leftOrRight).then(() => {
+                            resolve()
+                        })
+                    })
+                }
             })
         }
         this.update = (backwardOrForward, leftOrRight) => {

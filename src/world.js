@@ -20,7 +20,14 @@ export class World {
         // this.goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
         this.goals = [new Goal(this.world, 'goal 1', 15, 15)]
         draw.default.createDraw(this.ctx, this.worldDrawScale)
-        this.car = new Car(this.world, 25, 5, 2, draw, this.goals)
+        // this.car = new Car(this.world, 25, 5, 2, draw, this.goals)
+
+        this.populationSize = 1
+        this.cars = []
+        
+        for(let i = 0; i < this.populationSize; i++) {
+            this.cars.push(new Car(this.world, 25, 5, 2, draw, this.goals))
+        }
 
         this.gameover = false;
 
@@ -122,7 +129,7 @@ export class World {
 
         this.drawWorld = () => {
             this.world.DrawDebugData();
-            this.car.draw()
+            // this.car.draw()
         }
 
         this.step = (draw) => {
@@ -141,14 +148,36 @@ export class World {
                 this.verifyContactToGoal(contact)
                 this.verifyContactToWall(contact)
     
-                this.gameover = this.car.calcGameOver(this.ticks)
+                let gameoverCounter = 0
+                this.cars.forEach((car) => {
+                    if(car.calcGameOver(this.ticks)) {
+                        gameoverCounter++
+                    }
+                })
+
+                if (gameoverCounter == this.cars.length) {
+                    this.gameover = true
+                }
     
                 if (velocities) {
-                    this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                    this.cars.forEach((car) => {
+                        car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                    })
+                    // this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
                     this.step(draw)
                     resolve(this)
                 } else {
-                    this.car.updateWithNeuralNetwork().then(() => {
+                    let promises = []
+                    
+                    this.cars.forEach((car) => {
+                        if(!car.gameover) {
+                            promises.push(car.updateWithNeuralNetwork({backwardOrForward: 1, leftOrRight: 1}))
+                            // console.log('world update called', index)
+                        }
+                    })
+
+                    Promise.all(promises)
+                    .then((carsResolved) => {
                         this.step(draw)
                         resolve(this)
                     })

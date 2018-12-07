@@ -14,6 +14,9 @@ function init() {
     population.push(new World(0, 0, 30, canvas))
   }
 
+  let ticks = 0
+  let lastTickTime = 0
+
 
   let backwardOrForward = 0, leftOrRight = 0
 
@@ -56,6 +59,8 @@ function init() {
   //update  
   function update() {
 
+    if (lastTickTime == 0)
+      lastTickTime = performance.now();
     // world.update(true)
 
     let allWorlds = []
@@ -95,6 +100,9 @@ function init() {
       }
 
     })
+    var t1 = performance.now();
+    console.log("Call to doSomething took " + (t1 - lastTickTime) + " milliseconds.")
+    lastTickTime = t1
   };
 
 
