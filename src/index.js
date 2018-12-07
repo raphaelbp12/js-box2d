@@ -7,7 +7,7 @@ function init() {
   var canvas = document.getElementById("canvas")
   var world = new WorldDrawer(30, canvas)
 
-  let numPopulation = 3000
+  let numPopulation = 1
   let population = []
 
   for(let i = 0; i < numPopulation; i++) {
@@ -52,28 +52,6 @@ function init() {
   let gameoverCounter = 0
 
   update()
-
-  function test (data) {
-    return data
-  }
-  
-  let gw = new GenericWebWorker({foo: 23, bar: "ii"}, test)
-  gw.exec((data, fun1)=>{
-      var a = 0
-      for (var i = 0; i < 1000; i++) //blocking code
-      {
-        // console.log('******* i', i)
-        a += i
-        if (i == 100)
-          return fun1(i)
-      }
-  
-      // console.log(data) //{foo: 23, bar: "ii"}
-  })
-  .then(data => {
-    console.log('#####################', data+1)
-  }) //print Hello there
-  .catch(e=> {})
   
   //update  
   function update() {
@@ -86,7 +64,7 @@ function init() {
 
     population.forEach((person, index) => {
       if(!person.gameover) {
-        promises.push(person.update(false))
+        promises.push(person.update(true))
         // console.log('world update called', index)
       }
     })
@@ -102,8 +80,8 @@ function init() {
         }
       })
 
-      world.drawAllWorlds(allWorlds)
-      world.update()
+      // world.drawAllWorlds(allWorlds)
+      // world.update()
 
       // console.log('update called', gameoverCounter, population.length)
   
