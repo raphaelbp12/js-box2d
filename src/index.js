@@ -101,7 +101,7 @@ function init() {
 
     })
     var t1 = performance.now();
-    console.log("Call to doSomething took " + (t1 - lastTickTime) + " milliseconds.")
+    // console.log("Call to doSomething took " + (t1 - lastTickTime) + " milliseconds.")
     lastTickTime = t1
   };
 

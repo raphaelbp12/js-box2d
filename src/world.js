@@ -22,7 +22,7 @@ export class World {
         draw.default.createDraw(this.ctx, this.worldDrawScale)
         // this.car = new Car(this.world, 25, 5, 2, draw, this.goals)
 
-        this.populationSize = 1
+        this.populationSize = 20
         this.cars = []
         
         for(let i = 0; i < this.populationSize; i++) {
@@ -171,7 +171,8 @@ export class World {
                     
                     this.cars.forEach((car) => {
                         if(!car.gameover) {
-                            promises.push(car.updateWithNeuralNetwork({backwardOrForward: 1, leftOrRight: 1}))
+                            // promises.push(car.updateWithNeuralNetwork({backwardOrForward: 1, leftOrRight: 1}))
+                            promises.push(car.updateWithNeuralNetwork())
                             // console.log('world update called', index)
                         }
                     })

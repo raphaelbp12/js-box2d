@@ -290,7 +290,7 @@ export class Car {
                 } else {
                     this.neuralNetwork().then((vel) => {
                         // console.log('neural vel', vel)
-                        this.update(velocities.backwardOrForward, velocities.leftOrRight).then(() => {
+                        this.update(vel.backwardOrForward, vel.leftOrRight).then(() => {
                             resolve()
                         })
                     })
