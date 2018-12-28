@@ -2,26 +2,47 @@ import { Neuron } from './neuron.js'
 
 export class Layer {
     constructor(inputs, length, neuronsPreviousLayer, receivedWeights) {
-        this.activationValue = 0
         this.neurons = []
 
         this.getInputs = (inputs) => {
-            // console.log('getInputs', inputs)
+            let promises = []
             inputs.forEach((input) => {
-                this.neurons.push(new Neuron(input, 0))
+                promises.push(new Neuron(input, 0))
+            })
+            return new Promise((resolve, reject) => {
+                // console.log('getInputs', inputs)
+                Promise.all(promises)
+                .then((neurons) => {
+                    neurons.forEach((neuron) => {
+                        // console.log('input neuron', neuron)
+                        this.neurons.push(neuron)
+                    })
+                    resolve()
+                })
             })
         }
 
         this.generateLayer = (length, neuronsPreviousLayer, receivedWeights) => {
+            let promises = []
+
             for( let i = 0; i < length; i++) {
-                let newNeuron = null
                 if (receivedWeights) {
-                    newNeuron = new Neuron(null, neuronsPreviousLayer, receivedWeights[i])
+                    promises.push(new Neuron(null, neuronsPreviousLayer, receivedWeights[i]))
                 } else {
-                    newNeuron = new Neuron(null, neuronsPreviousLayer)
+                    promises.push(new Neuron(null, neuronsPreviousLayer))
                 }
-                this.neurons.push(newNeuron)
             }
+
+            return new Promise((resolve, reject) => {
+                // console.log('getInputs', inputs)
+                Promise.all(promises)
+                .then((neurons) => {
+                    neurons.forEach((neuron) => {
+                        this.neurons.push(neuron)
+                    })
+                    resolve()
+                })
+            })
         }
 
         this.getWeights = () => {
@@ -36,10 +57,12 @@ export class Layer {
             })
         }
 
-        if (inputs) {
-            this.getInputs(inputs)
-        } else {
-            this.generateLayer(length, neuronsPreviousLayer, receivedWeights)
-        }
+        return new Promise((resolve, reject) => {
+            if (inputs) {
+                this.getInputs(inputs).then(() => { resolve(this) })
+            } else {
+                this.generateLayer(length, neuronsPreviousLayer, receivedWeights).then(() => { resolve(this) })
+            }
+        })
     }
 }

@@ -1,17 +1,21 @@
 import { World } from './world.js'
 import { WorldDrawer } from './worldDrawer.js'
+import { GenericWebWorker } from './GenericWebWorker.js'
 
 function init() {  
 
   var canvas = document.getElementById("canvas")
   var world = new WorldDrawer(30, canvas)
 
-  let numPopulation = 1500
+  let numPopulation = 1
   let population = []
 
   for(let i = 0; i < numPopulation; i++) {
     population.push(new World(0, 0, 30, canvas))
   }
+
+  let ticks = 0
+  let lastTickTime = 0
 
 
   let backwardOrForward = 0, leftOrRight = 0
@@ -55,35 +59,50 @@ function init() {
   //update  
   function update() {
 
+    if (lastTickTime == 0)
+      lastTickTime = performance.now();
     // world.update(true)
 
     let allWorlds = []
 
+    let promises = []
+
     population.forEach((person, index) => {
-      allWorlds.push({car: person.car, gameover: person.gameover})
       if(!person.gameover) {
-        person.update(false)
+        promises.push(person.update(true))
         // console.log('world update called', index)
+      }
+    })
+
+    Promise.all(promises)
+    .then((populationResolved) => {
+      populationResolved.forEach((person) => {
+        // console.log('person', person)
+        allWorlds.push({car: person.car, gameover: person.gameover})
         if(person.gameover) {
           console.log('gameoverCounter incresed', gameoverCounter)
           gameoverCounter = gameoverCounter + 1
         }
+      })
+
+      // world.drawAllWorlds(allWorlds)
+      // world.update()
+
+      // console.log('update called', gameoverCounter, population.length)
+  
+      if(gameoverCounter < population.length) {
+        console.log('ooveeer gameoverCounter', gameoverCounter)
+        window.setTimeout(update, 10);
+      } else if (gameoverCounter == population.length) {
+        console.log('ooveeer gameoverCounter', gameoverCounter)
+        window.setTimeout(update, 10);
+        gameoverCounter = gameoverCounter + 1
       }
+
     })
-
-    // world.drawAllWorlds(allWorlds)
-    world.update()
-
-    // console.log('update called', gameoverCounter, population.length)
-
-    if(gameoverCounter < population.length) {
-      console.log('ooveeer gameoverCounter', gameoverCounter)
-      window.setTimeout(update, 10);
-    } else if (gameoverCounter == population.length) {
-      console.log('ooveeer gameoverCounter', gameoverCounter)
-      window.setTimeout(update, 10);
-      gameoverCounter = gameoverCounter + 1
-    }
+    var t1 = performance.now();
+    // console.log("Call to doSomething took " + (t1 - lastTickTime) + " milliseconds.")
+    lastTickTime = t1
   };
 
 

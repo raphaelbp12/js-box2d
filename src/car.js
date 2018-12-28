@@ -1,10 +1,11 @@
 import { Sensors } from './sensors.js'
+import { Layer } from './NeuralNetwork/layer.js'
 
 export class Car {
-    constructor(world, x, y, scale, draw) {
+    constructor(world, x, y, scale, draw, goals) {
         this.sensors = new Sensors(world, scale, draw)
 
-        this.goals = []
+        this.goals = goals
         this.goalPoints = []
         this.path = []
 
@@ -21,6 +22,7 @@ export class Car {
         this.fixDef.friction = 4.0/scale;
         this.fixDef.restitution = 0.1;
         this.fixDef.userData = "car";
+        this.fixDef.isSensor = true;
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
         
@@ -28,6 +30,21 @@ export class Car {
         this.body.CreateFixture(this.fixDef);
 
         this.carPosition = this.body.GetWorldCenter()
+        this.carPositions = [this.body.GetWorldCenter()]
+
+        this.ticks = 0
+
+        this.gameover = false
+        this.lastTotalDistance = 0
+        this.totalRunnedDistance = 0
+        this.numberContactWall = 0
+        this.ticksOnCrashToWall = []
+        this.ticksOnGetObjective = []
+
+        this.layers = []
+
+        this.backwardOrForward = 0
+        this.leftOrRight = 0
 
         this.xx = this.body.GetWorldCenter().x;
         this.yy = this.body.GetWorldCenter().y;
@@ -45,6 +62,127 @@ export class Car {
         this.p1l= new Box2D.Common.Math.b2Vec2;
         this.p2l= new Box2D.Common.Math.b2Vec2;
         this.p3l= new Box2D.Common.Math.b2Vec2;
+
+
+        this.neuralNetwork = () => {
+            return new Promise((resolve, reject) => {
+                // console.log('neuralNetworks initiated')
+                // console.log('this.getSensorsDistances()', this.getSensorsDistances())
+            
+                let firstGoal = {angle: 0, distance: 0}
+            
+                if (this.goals && this.goals.length > 0) {
+                    firstGoal = this.goals[0].getPosition()
+                }
+                
+                // console.log('firstGoal', firstGoal)
+                // console.log('this.getCarInputsToFirstLayer(firstGoal)', this.getCarInputsToFirstLayer(firstGoal))
+
+                // if (!this.getSensorsDistances() || this.getSensorsDistances().length != 16) {
+                //     resolve({backwardOrForward: 0, leftOrRight: 0})
+                // } else if (this.getSensorsDistances().length == this.getCarInputsToFirstLayer(firstGoal).length) {
+                //     resolve({backwardOrForward: 0, leftOrRight: 0})
+                // }
+
+                let newLayers = []
+            
+                new Layer(this.getCarInputsToFirstLayer(firstGoal))
+                .then((layer) => {
+                    newLayers.push(layer)
+                    new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null)
+                    .then((layer) => {
+                        newLayers.push(layer)
+                        new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null)
+                        .then((layer) => {
+                            newLayers.push(layer)
+
+                            let backwardOrForward = 0
+                            let leftOrRight = 0
+
+                            if (this.layers[2]) {
+                                let outputs = this.layers[2].getOutputs()
+                                backwardOrForward = outputs[0]
+                                leftOrRight = outputs[1]
+                            }
+
+                            let vels = {backwardOrForward, leftOrRight}
+                            // console.log('outputs', vels)
+                            this.layers = newLayers
+                            resolve(vels)
+                        })
+                    })
+                })
+                
+                
+                // newLayers.push(new Layer(this.getCarInputsToFirstLayer(firstGoal)))
+                // newLayers.push(new Layer(null, 21, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
+                // newLayers.push(new Layer(null, 60, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
+                // newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
+            
+            
+                // this.layers.forEach((layer, index) => {
+                //   console.log('layer getOutputs', index, layer.getOutputs())
+                //   console.log('************************************')
+                // })
+                // console.log('neuralNetworks ended')
+            })
+            
+        }
+
+        this.calcGameOver = (ticks) => {
+            if (this.gameover)
+                return this.gameover
+
+            this.ticks = ticks
+
+            let maxSeconds = 5
+
+            if (this.goals.length == 0)
+                this.gameover = true
+            if (this.ticksOnCrashToWall.length > 0)
+                this.gameover = true
+            if (this.totalRunnedDistance < 0.6 && ticks > 60*maxSeconds)
+                this.gameover = true
+
+            if(ticks > 3000)
+                this.gameover = true
+                
+            let index = ticks / 60
+            if ((typeof index==='number' && (index%1)===0) && index > 1) {
+                if (this.totalRunnedDistance - this.lastTotalDistance < 0.01 && ticks > 60*maxSeconds)
+                    this.gameover = true
+
+                if (this.totalRunnedDistance/ticks !=0 && this.totalRunnedDistance/ticks < 0.002 && ticks > 60*maxSeconds)
+                    this.gameover = true
+
+                console.log('vel media', this.totalRunnedDistance/ticks)
+            }
+
+            return this.gameover
+        }
+
+        this.registerCarPositions = () => {
+            if  (this.ticks % 60 == 0) {
+                this.carPositions.push({x: this.carPosition.x, y: this.carPosition.y})
+                // console.log('this.carPositions', this.carPositions)
+                this.calcTotalDistance()
+            }
+        }
+
+        this.calcTotalDistance = () => {
+            this.lastTotalDistance = this.totalRunnedDistance
+            if(this.carPositions && this.carPositions.length > 1) {
+                // console.log('entrou no if')
+                let index = this.ticks / 60
+                if ((typeof index==='number' && (index%1)===0) && index > 1) {
+                    let runnedDistance = Math.sqrt(Math.pow((this.carPositions[index-1].x - this.carPositions[index].x), 2) + Math.pow((this.carPositions[index-1].y - this.carPositions[index].y), 2))
+                    // console.log('runnedDistance', runnedDistance, 'index', index, this.carPositions[index-1], this.carPositions[index])
+                    this.totalRunnedDistance = this.totalRunnedDistance + runnedDistance                    
+                }
+            }
+            console.log('totalDistance', this.totalRunnedDistance, this.ticks)
+            return this.totalRunnedDistance
+        }
     
         this.createWheel = (world, x, y, scale) => {
             this.scale = scale
@@ -57,6 +195,7 @@ export class Car {
             fixDef.friction = 40/scale;
             fixDef.restitution = 0.1;
             fixDef.userData = "wheel";
+            fixDef.isSensor = true;
             fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
             fixDef.shape.SetAsBox(.04*scale,.08*scale);
             fixDef.isSensor = true;
@@ -140,32 +279,55 @@ export class Car {
             wheel.SetLinearVelocity(newworld);
         }
 
+        this.updateWithNeuralNetwork = (velocities) => {
+        
+            this.sensors.update(this.carPosition, this.body.GetAngle())
+            return new Promise((resolve, reject) => {
+                if(velocities) {
+                    this.update(velocities.backwardOrForward, velocities.leftOrRight).then(() => {
+                        resolve()
+                    })
+                } else {
+                    this.neuralNetwork().then((vel) => {
+                        // console.log('neural vel', vel)
+                        this.update(vel.backwardOrForward, vel.leftOrRight).then(() => {
+                            resolve()
+                        })
+                    })
+                }
+            })
+        }
         this.update = (backwardOrForward, leftOrRight) => {
 
-            this.setVelocitiesAndDirection(backwardOrForward, leftOrRight)
-            this.carPosition = this.body.GetWorldCenter()
-
-            // this.path.push({x: this.carPosition.x, y: this.carPosition.y})
-
-            this.move()
-            this.cancelVel(this.frontRightWheel);
-            this.cancelVel(this.frontLeftWheel);
-            this.cancelVel(this.rearRightWheel);
-            this.cancelVel(this.rearLeftWheel);
-            
-            this.p1r = this.frontRightWheel.GetWorldCenter();
-            this.p2r = this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,1));
-            this.p3r.x = (this.p2r.x - this.p1r.x)*this.ENGINE_SPEED;
-            this.p3r.y = (this.p2r.y - this.p1r.y)*this.ENGINE_SPEED;
+            return new Promise((resolve, reject) => {
                     
-            this.p1l = this.frontLeftWheel.GetWorldCenter();
-            this.p2l = this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,1));
-            this.p3l.x = (this.p2l.x - this.p1l.x)*this.ENGINE_SPEED;
-            this.p3l.y = (this.p2l.y - this.p1l.y)*this.ENGINE_SPEED;
-    
-            this.sensors.update(this.carPosition, this.body.GetAngle())
+                this.setVelocitiesAndDirection(backwardOrForward, leftOrRight)
+                this.carPosition = this.body.GetWorldCenter()
 
-            // console.log('linear velocity', this.body.GetLinearVelocity())
+                // this.path.push({x: this.carPosition.x, y: this.carPosition.y})
+
+                this.move()
+                this.cancelVel(this.frontRightWheel);
+                this.cancelVel(this.frontLeftWheel);
+                this.cancelVel(this.rearRightWheel);
+                this.cancelVel(this.rearLeftWheel);
+                
+                this.p1r = this.frontRightWheel.GetWorldCenter();
+                this.p2r = this.frontRightWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,1));
+                this.p3r.x = (this.p2r.x - this.p1r.x)*this.ENGINE_SPEED;
+                this.p3r.y = (this.p2r.y - this.p1r.y)*this.ENGINE_SPEED;
+                        
+                this.p1l = this.frontLeftWheel.GetWorldCenter();
+                this.p2l = this.frontLeftWheel.GetWorldPoint(new Box2D.Common.Math.b2Vec2(0,1));
+                this.p3l.x = (this.p2l.x - this.p1l.x)*this.ENGINE_SPEED;
+                this.p3l.y = (this.p2l.y - this.p1l.y)*this.ENGINE_SPEED;
+
+                this.registerCarPositions()
+
+                // console.log('linear velocity', this.body.GetLinearVelocity())
+
+                resolve()
+            })
         }
 
         this.getSensorsDistances = () => {

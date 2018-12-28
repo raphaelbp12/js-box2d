@@ -1,6 +1,5 @@
 import { Car } from './car.js'
 import { Goal } from './goal.js'
-import { Layer } from './NeuralNetwork/layer.js'
 import contactListener from './contactListener.js'
 import draw from './draw.js'
 
@@ -21,43 +20,16 @@ export class World {
         // this.goals = [new Goal(world, 'goal 1', 10, 10), new Goal(world, 'goal 2', 20, 20), new Goal(world, 'goal 3', 30, 20)]
         this.goals = [new Goal(this.world, 'goal 1', 15, 15)]
         draw.default.createDraw(this.ctx, this.worldDrawScale)
-        this.car = new Car(this.world, 25, 5, 2, draw)
-        this.carPositions = [{x: this.car.xx, y: this.car.yy}]
-        this.totalRunnedDistance = 0
-        this.numberContactWall = 0
-        this.ticksOnCrashToWall = []
-        this.ticksOnGetObjective = []
+        // this.car = new Car(this.world, 25, 5, 2, draw, this.goals)
 
-        this.layers = []
-
-        this.backwardOrForward = 0
-        this.leftOrRight = 0
-
-        this.gameover = false
-        this.lastTotalDistance = 0
-
-        this.calcTotalDistance = () => {
-            this.lastTotalDistance = this.totalRunnedDistance
-            if(this.carPositions && this.carPositions.length > 1) {
-                // console.log('entrou no if')
-                let index = this.ticks / 60
-                if ((typeof index==='number' && (index%1)===0) && index > 1) {
-                    let runnedDistance = Math.sqrt(Math.pow((this.carPositions[index-1].x - this.carPositions[index].x), 2) + Math.pow((this.carPositions[index-1].y - this.carPositions[index].y), 2))
-                    // console.log('runnedDistance', runnedDistance, 'index', index, this.carPositions[index-1], this.carPositions[index])
-                    this.totalRunnedDistance = this.totalRunnedDistance + runnedDistance                    
-                }
-            }
-            console.log('totalDistance', this.totalRunnedDistance, this.ticks)
-            return this.totalRunnedDistance
+        this.populationSize = 20
+        this.cars = []
+        
+        for(let i = 0; i < this.populationSize; i++) {
+            this.cars.push(new Car(this.world, 25, 5, 2, draw, this.goals))
         }
 
-        this.registerCarPositions = () => {
-            if  (this.ticks % 60 == 0) {
-                this.carPositions.push({x: this.car.carPosition.x, y: this.car.carPosition.y})
-                // console.log('this.carPositions', this.carPositions)
-                this.calcTotalDistance()
-            }
-        }
+        this.gameover = false;
 
         this.initDebugDraw = () => {
             let b2DebugDraw = Box2D.Dynamics.b2DebugDraw
@@ -128,6 +100,8 @@ export class World {
 
         this.verifyContactToWall = (contact) => {
             let contacted = this.verifyContact(contact, 'car', 'wall')
+            if (!contacted)
+                contacted = this.verifyContact(contact, 'wheel', 'wall')
 
             if(contacted) {
                 if(this.ticksOnCrashToWall && this.ticksOnCrashToWall.length > 0) {
@@ -153,99 +127,63 @@ export class World {
             return false
         }
 
-        this.calcGameOver = () => {
-
-            let maxSeconds = 5
-
-            if (this.goals.length == 0)
-                this.gameover = true
-            if (this.ticksOnCrashToWall.length > 0)
-                this.gameover = true
-            if (this.totalRunnedDistance < 0.6 && this.ticks > 60*maxSeconds)
-                this.gameover = true
-
-            if(this.ticks > 3000)
-                this.gameover = true
-                
-            let index = this.ticks / 60
-            if ((typeof index==='number' && (index%1)===0) && index > 1) {
-                if (this.totalRunnedDistance - this.lastTotalDistance < 0.01 && this.ticks > 60*maxSeconds)
-                    this.gameover = true
-
-                if (this.totalRunnedDistance/this.ticks !=0 && this.totalRunnedDistance/this.ticks < 0.002 && this.ticks > 60*maxSeconds)
-                    this.gameover = true
-
-                console.log('vel media', this.totalRunnedDistance/this.ticks)
-            }
-        }
-
-        this.neuralNetwork = () => {
-            // console.log('neuralNetworks initiated')
-            // console.log('this.car.getSensorsDistances()', this.car.getSensorsDistances())
-            if (!this.car.getSensorsDistances() || this.car.getSensorsDistances().length != 16) {
-                this.backwardOrForward = 0
-                this.leftOrRight = 0
-                return false
-            }
-            if (this.layers[2]) {
-              let outputs = this.layers[2].getOutputs()
-              this.backwardOrForward = outputs[0]
-              this.leftOrRight = outputs[1]
-            //   console.log('outputs', outputs)
-            } else {
-                this.backwardOrForward = 0
-                this.leftOrRight = 0
-            }
-
-            let newLayers = []
-        
-            let firstGoal = {angle: 0, distance: 0}
-        
-            if (this.goals && this.goals.length > 0) {
-              firstGoal = this.goals[0].getPosition()
-            }
-        
-            newLayers.push(new Layer(this.car.getCarInputsToFirstLayer(firstGoal)))
-            newLayers.push(new Layer(null, 20, newLayers[0].neurons, this.layers[1] ? this.layers[1].getWeights() : null))
-            // newLayers.push(new Layer(null, 60, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
-            newLayers.push(new Layer(null, 2, newLayers[1].neurons, this.layers[2] ? this.layers[2].getWeights() : null))
-        
-            this.layers = newLayers
-        
-            // this.layers.forEach((layer, index) => {
-            //   console.log('layer getOutputs', index, layer.getOutputs())
-            //   console.log('************************************')
-            // })
-            // console.log('neuralNetworks ended')
-        }
-
         this.drawWorld = () => {
             this.world.DrawDebugData();
             // this.car.draw()
         }
 
-        this.update = (draw, velocities) => {
-            this.ticks = this.ticks + 1
-            let contact = contactListener.default.getBeginContact()
-            this.verifyContactToGoal(contact)
-            this.verifyContactToWall(contact)
-
-            this.calcGameOver()
-
-            if (velocities) {
-                this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
-            } else {
-                this.neuralNetwork()
-                this.car.update(this.backwardOrForward, this.leftOrRight)
-            }
-
+        this.step = (draw) => {
             this.world.Step(1 / 60, 10, 10);
             this.world.ClearForces();
 
-            this.registerCarPositions()
-
             if (draw)
                 this.drawWorld()
+
+        }
+
+        this.update = (draw, velocities) => {
+            return new Promise((resolve, reject) => {
+                this.ticks = this.ticks + 1
+                let contact = contactListener.default.getBeginContact()
+                this.verifyContactToGoal(contact)
+                this.verifyContactToWall(contact)
+    
+                let gameoverCounter = 0
+                this.cars.forEach((car) => {
+                    if(car.calcGameOver(this.ticks)) {
+                        gameoverCounter++
+                    }
+                })
+
+                if (gameoverCounter == this.cars.length) {
+                    this.gameover = true
+                }
+    
+                if (velocities) {
+                    this.cars.forEach((car) => {
+                        car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                    })
+                    // this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                    this.step(draw)
+                    resolve(this)
+                } else {
+                    let promises = []
+                    
+                    this.cars.forEach((car) => {
+                        if(!car.gameover) {
+                            // promises.push(car.updateWithNeuralNetwork({backwardOrForward: 1, leftOrRight: 1}))
+                            promises.push(car.updateWithNeuralNetwork())
+                            // console.log('world update called', index)
+                        }
+                    })
+
+                    Promise.all(promises)
+                    .then((carsResolved) => {
+                        this.step(draw)
+                        resolve(this)
+                    })
+                }
+            })
         }
     }
 }
