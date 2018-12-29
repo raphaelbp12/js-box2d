@@ -22,8 +22,12 @@ export class World {
         draw.default.createDraw(this.ctx, this.worldDrawScale)
         // this.car = new Car(this.world, 25, 5, 2, draw, this.goals)
 
-        this.populationSize = 20
+        this.populationSize = 50
         this.cars = []
+
+        this.generationParams = {
+            scrambleLayers: 0.5
+        }
         
         for(let i = 0; i < this.populationSize; i++) {
             this.cars.push(new Car(this.world, 25, 5, 2, draw, this.goals))
@@ -125,7 +129,7 @@ export class World {
         this.verifyContact = (contact, fixBPartialName, fixAPartialName) => {
 
             if(contact) {
-              console.log('fixA', contact.m_fixtureA.GetUserData(), 'fixB', contact.m_fixtureB.GetUserData())
+            //   console.log('fixA', contact.m_fixtureA.GetUserData(), 'fixB', contact.m_fixtureB.GetUserData())
               if ((contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf(fixAPartialName) != -1 && (contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf(fixBPartialName) != -1)) || (contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf(fixBPartialName) != -1 && (contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf(fixAPartialName) != -1))) {
                 return contact.m_fixtureB.GetUserData() + ' ' + contact.m_fixtureA.GetUserData()
               }
@@ -153,6 +157,53 @@ export class World {
             })
         }
 
+        this.generateNewPop = () => {
+            let highestScore = 0
+
+            let carArrayProbabilities = []
+
+            let newCars = []
+
+            this.cars.forEach((car) => {
+                let thisScore = car.score
+                if (thisScore > highestScore)
+                    highestScore = thisScore
+            })
+
+            console.log('highestScore', highestScore)
+
+            this.cars.forEach((car) => {
+                let probability = Math.floor(car.score/highestScore * 100)
+                console.log('probability', probability)
+
+                for(let i = 0; i < probability; i++) {
+                    carArrayProbabilities.push(car)
+                }
+            })
+
+            for(let i = 0; i < this.populationSize; i++) {
+                let carChosenIndex = Math.floor(Math.random() * carArrayProbabilities.length)
+                newCars.push(carArrayProbabilities[carChosenIndex])
+            }
+
+            this.cars.forEach((car) => {
+                // newCars.push(car)
+                car.destroyCar()
+            })
+
+            this.cars = []
+
+            newCars.forEach((newCar) => {
+                this.cars.push(new Car(this.world, 25, 5, 2, true, this.goals, newCar.layers))
+            })
+
+            console.log('carArrayProbabilities', carArrayProbabilities)
+
+
+            console.log('cars', this.cars)
+            this.step(true)
+        }
+
         this.update = (draw, velocities) => {
             return new Promise((resolve, reject) => {
                 this.ticks = this.ticks + 1
@@ -170,11 +221,14 @@ export class World {
                 if (gameoverCounter == this.cars.length) {
                     this.gameover = true
                     this.calcAllScores()
+                    resolve(this)
                 }
     
                 if (velocities) {
                     this.cars.forEach((car) => {
-                        car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                        if(!car.gameover) {
+                            car.update(velocities.backwardOrForward, velocities.leftOrRight)
+                        }
                     })
                     // this.car.update(velocities.backwardOrForward, velocities.leftOrRight)
                     this.step(draw)

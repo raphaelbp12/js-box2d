@@ -94,9 +94,14 @@ function init() {
         console.log('ooveeer gameoverCounter', gameoverCounter)
         window.setTimeout(update, 10);
       } else if (gameoverCounter == population.length) {
-        console.log('ooveeer gameoverCounter', gameoverCounter)
-        window.setTimeout(update, 10);
-        gameoverCounter = gameoverCounter + 1
+        console.log('calculating new population')
+        population.forEach((world) => {
+          world.generateNewPop()
+          world.gameover = false
+          world.ticks = 0
+          gameoverCounter = 0
+          window.setTimeout(update, 10);
+        })
       }
 
     })
