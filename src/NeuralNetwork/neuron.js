@@ -1,13 +1,3 @@
-import { GenericWebWorker } from './../GenericWebWorker.js'
-
-function calc(neuronValues, weights) {
-    let value = 0
-    values.forEach((neuronValue) => {
-        value = value + neuronValue*weights[index]
-    })
-    return value
-}
-
 export class Neuron {
     constructor(input, neuronsPreviousLayer, receivedWeights) {
         return new Promise((resolve, reject) => {

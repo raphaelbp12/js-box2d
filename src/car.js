@@ -1,13 +1,27 @@
 import { Sensors } from './sensors.js'
 import { Layer } from './NeuralNetwork/layer.js'
 
+function guid() {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+        .toString(16)
+        .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
 export class Car {
     constructor(world, x, y, scale, draw, goals) {
         this.sensors = new Sensors(world, scale, draw)
 
+        this.serialNumber = guid()
+
         this.goals = goals
         this.goalPoints = []
         this.path = []
+
+        this.maxTicksToGameOver = 3000
+        this.score = 0
 
         this.scale = null
 
@@ -21,7 +35,7 @@ export class Car {
         this.fixDef.density = 30.0;
         this.fixDef.friction = 4.0/scale;
         this.fixDef.restitution = 0.1;
-        this.fixDef.userData = "car";
+        this.fixDef.userData = "car " + this.serialNumber;
         this.fixDef.isSensor = true;
         this.fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
         this.fixDef.shape.SetAsBox(.1*scale,0.3*scale);
@@ -38,7 +52,7 @@ export class Car {
         this.lastTotalDistance = 0
         this.totalRunnedDistance = 0
         this.numberContactWall = 0
-        this.ticksOnCrashToWall = []
+        this.ticksOnCrashToWall = 3000
         this.ticksOnGetObjective = []
 
         this.layers = []
@@ -139,12 +153,12 @@ export class Car {
 
             if (this.goals.length == 0)
                 this.gameover = true
-            if (this.ticksOnCrashToWall.length > 0)
+            if (this.ticksOnCrashToWall != 3000)
                 this.gameover = true
             if (this.totalRunnedDistance < 0.6 && ticks > 60*maxSeconds)
                 this.gameover = true
 
-            if(ticks > 3000)
+            if(ticks > this.maxTicksToGameOver)
                 this.gameover = true
                 
             let index = ticks / 60
@@ -194,7 +208,7 @@ export class Car {
             fixDef.density = 30;
             fixDef.friction = 40/scale;
             fixDef.restitution = 0.1;
-            fixDef.userData = "wheel";
+            fixDef.userData = "wheel " + this.serialNumber;
             fixDef.isSensor = true;
             fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
             fixDef.shape.SetAsBox(.04*scale,.08*scale);
@@ -297,6 +311,7 @@ export class Car {
                 }
             })
         }
+
         this.update = (backwardOrForward, leftOrRight) => {
 
             return new Promise((resolve, reject) => {
@@ -347,6 +362,21 @@ export class Car {
             ret.push(this.body.GetLinearVelocity().y / 25)
             // console.log('getCarInputsToFirstLayer', ret, goalPosition)
             return ret
+        }
+
+        this.calcScore = () => {
+            let goalPosition = this.goals.length > 0 ? this.goals[0].getPosition() : {x: 0, y: 0}
+            let goalAngleAndDistance = this.angleRelativePoint(goalPosition)
+            let goalDistance = goalAngleAndDistance.distance / 40
+            let ticksOnCrash = this.ticksOnCrashToWall
+
+            let score = (1.0/goalDistance) + this.totalRunnedDistance + (1.0/ticksOnCrash)
+
+            console.log('score', score, 'goalDistance', goalDistance, 'this.totalRunnedDistance', this.totalRunnedDistance, 'ticksOnCrash', ticksOnCrash)
+
+            this.score = score
+            return score
+
         }
 
         this.draw = () => {

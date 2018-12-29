@@ -99,11 +99,17 @@ export class World {
         }
 
         this.verifyContactToWall = (contact) => {
-            let contacted = this.verifyContact(contact, 'car', 'wall')
+            let contacted = this.verifyContact(contact, 'wall', 'car')
             if (!contacted)
-                contacted = this.verifyContact(contact, 'wheel', 'wall')
+                contacted = this.verifyContact(contact, 'wall', 'wheel')
 
             if(contacted) {
+                this.cars.forEach((car) => {
+                    if (contacted.indexOf(car.serialNumber) != -1) {
+                        car.gameover = true
+                        car.ticksOnCrashToWall = this.ticks
+                    }
+                })
                 if(this.ticksOnCrashToWall && this.ticksOnCrashToWall.length > 0) {
                     let length = this.ticksOnCrashToWall.length
                     if ((this.ticks - this.ticksOnCrashToWall[length - 1]) > 30) {
@@ -116,12 +122,12 @@ export class World {
             }
         }
 
-        this.verifyContact = (contact, fixExactName, fixPartialName) => {
+        this.verifyContact = (contact, fixBPartialName, fixAPartialName) => {
 
             if(contact) {
               console.log('fixA', contact.m_fixtureA.GetUserData(), 'fixB', contact.m_fixtureB.GetUserData())
-              if ((contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf(fixPartialName) != -1 && (contact.m_fixtureB.GetUserData() == fixExactName)) || ((contact.m_fixtureA.GetUserData() == fixExactName) &&  contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf(fixPartialName) != -1)) {
-                  return true
+              if ((contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf(fixAPartialName) != -1 && (contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf(fixBPartialName) != -1)) || (contact.m_fixtureA.GetUserData() && contact.m_fixtureA.GetUserData().indexOf(fixBPartialName) != -1 && (contact.m_fixtureB.GetUserData() && contact.m_fixtureB.GetUserData().indexOf(fixAPartialName) != -1))) {
+                return contact.m_fixtureB.GetUserData() + ' ' + contact.m_fixtureA.GetUserData()
               }
             }
             return false
@@ -141,6 +147,12 @@ export class World {
 
         }
 
+        this.calcAllScores = () => {
+            this.cars.forEach((car) => {
+                car.calcScore()
+            })
+        }
+
         this.update = (draw, velocities) => {
             return new Promise((resolve, reject) => {
                 this.ticks = this.ticks + 1
@@ -157,6 +169,7 @@ export class World {
 
                 if (gameoverCounter == this.cars.length) {
                     this.gameover = true
+                    this.calcAllScores()
                 }
     
                 if (velocities) {
